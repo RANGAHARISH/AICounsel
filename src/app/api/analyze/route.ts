@@ -61,7 +61,14 @@ async function extractTextFromFile(file: File): Promise<string> {
 
   if (type.includes("pdf") || name.endsWith(".pdf")) {
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    const loadingTask = pdfjs.getDocument({ data: new Uint8Array(buf) });
+    const pdfWorker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+    // @ts-ignore
+    pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(buf),
+      useSystemFonts: true,
+    });
     const pdf = await loadingTask.promise;
     let out = "";
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
