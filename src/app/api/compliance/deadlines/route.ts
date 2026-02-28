@@ -5,8 +5,7 @@ import { NextResponse } from "next/server";
 // GET /api/compliance/deadlines
 export async function GET(req: Request) {
     try {
-        const sessionRes = await auth.api.getSession({ headers: req.headers });
-        const session = (sessionRes as any)?.data;
+        const session = await auth.api.getSession({ headers: req.headers });
         const userId = session?.user?.id;
 
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -47,8 +46,7 @@ export async function GET(req: Request) {
 // POST /api/compliance/deadlines/generate (Auto-generate MVP deadlines)
 export async function POST(req: Request) {
     try {
-        const sessionRes = await auth.api.getSession({ headers: req.headers });
-        const session = (sessionRes as any)?.data;
+        const session = await auth.api.getSession({ headers: req.headers });
         const userId = session?.user?.id;
 
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -101,8 +99,7 @@ export async function POST(req: Request) {
 // PATCH /api/compliance/deadlines (Mark as complete/pending)
 export async function PATCH(req: Request) {
     try {
-        const sessionRes = await auth.api.getSession({ headers: req.headers });
-        const session = (sessionRes as any)?.data;
+        const session = await auth.api.getSession({ headers: req.headers });
         const userId = session?.user?.id;
 
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

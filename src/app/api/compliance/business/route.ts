@@ -4,8 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
     try {
-        const sessionRes = await auth.api.getSession({ headers: req.headers });
-        const session = (sessionRes as any)?.data;
+        const session = await auth.api.getSession({ headers: req.headers });
         const userId = session?.user?.id;
 
         if (!userId) {
@@ -26,8 +25,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
     try {
-        const sessionRes = await auth.api.getSession({ headers: req.headers });
-        const session = (sessionRes as any)?.data;
+        const session = await auth.api.getSession({ headers: req.headers });
         const userId = session?.user?.id;
 
         if (!userId) {

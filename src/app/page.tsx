@@ -5,11 +5,10 @@ import { Header } from "@/components/header";
 import { auth } from "@/lib/auth";
 
 export default async function Home() {
-  const sessionRes = await auth.api.getSession({ headers: await headers() });
-  const session = (sessionRes as any)?.data;
+  const session = await auth.api.getSession({ headers: await headers() });
 
-  if (session?.user) {
-    redirect("/analyze");
+  if (!session?.user) {
+    redirect("/login");
   }
 
   return (

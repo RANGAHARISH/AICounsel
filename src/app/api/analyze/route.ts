@@ -119,8 +119,7 @@ ${documentText}`;
 
 export async function POST(request: Request) {
   try {
-    const sessionRes = await auth.api.getSession({ headers: request.headers });
-    const session = (sessionRes as any)?.data;
+    const session = await auth.api.getSession({ headers: request.headers });
     const userId: string | null = session?.user?.id ?? null;
 
     const contentType = request.headers.get("content-type") || "";
