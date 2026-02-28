@@ -4,15 +4,23 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import {
+  DocumentViewer,
+  type RedFlagForViewer,
+} from "@/components/DocumentViewer";
+import { IssuesPanel } from "@/components/IssuesPanel";
+
+type RedFlag = RedFlagForViewer & {
+  whyItMatters: string;
+  suggestedEdit?: string;
+  category?: string;
+  recommendedActions?: string[];
+};
 
 type Analysis = {
+  sourceText: string;
   plainEnglishSummary: string;
-  redFlags: Array<{
-    title: string;
-    severity: "low" | "medium" | "high";
-    whyItMatters: string;
-    suggestedEdit?: string;
-  }>;
+  redFlags: RedFlag[];
   shouldISignScore: number;
   rationale: string;
   keyClauses: string[];
@@ -20,7 +28,7 @@ type Analysis = {
   disclaimer: string;
 };
 
-function severityStyles(severity: Analysis["redFlags"][number]["severity"]) {
+function severityStyles(severity: RedFlag["severity"]) {
   switch (severity) {
     case "high":
       return "bg-red-50 text-red-700 border-red-200";
@@ -40,7 +48,7 @@ export default function AnalyzePage() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [analysisText, setAnalysisText] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isPending && !session?.user) router.replace("/login");
@@ -53,7 +61,7 @@ export default function AnalyzePage() {
 
   async function onAnalyze() {
     setError("");
-    setAnalysis(null);
+    setAnalysisText(null);
     setLoading(true);
     try {
       const fd = new FormData();
@@ -65,13 +73,13 @@ export default function AnalyzePage() {
         body: fd,
       });
       const json = (await res.json()) as
-        | { data: Analysis }
+        | { text: string }
         | { error: string; raw?: string };
       if (!res.ok) {
         setError("error" in json ? json.error : "Request failed");
         return;
       }
-      if ("data" in json) setAnalysis(json.data);
+      if ("text" in json) setAnalysisText(json.text);
     } catch {
       setError("Something went wrong");
     } finally {
@@ -90,11 +98,14 @@ export default function AnalyzePage() {
           </Link>
           <nav className="flex items-center gap-4">
             <Link
-              href="/"
+              href="/compliance"
               className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
             >
-              Home
+              Compliance Manager
             </Link>
+            <div className="text-sm font-medium text-stone-900 border-b-2 border-stone-900">
+              Document Analysis
+            </div>
           </nav>
         </div>
       </header>
@@ -114,18 +125,16 @@ export default function AnalyzePage() {
               <button
                 type="button"
                 onClick={() => setMode("file")}
-                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${
-                  mode === "file" ? "bg-stone-900 text-white" : "text-stone-700 hover:bg-stone-50"
-                }`}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${mode === "file" ? "bg-stone-900 text-white" : "text-stone-700 hover:bg-stone-50"
+                  }`}
               >
                 Upload file
               </button>
               <button
                 type="button"
                 onClick={() => setMode("paste")}
-                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${
-                  mode === "paste" ? "bg-stone-900 text-white" : "text-stone-700 hover:bg-stone-50"
-                }`}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${mode === "paste" ? "bg-stone-900 text-white" : "text-stone-700 hover:bg-stone-50"
+                  }`}
               >
                 Paste text
               </button>
@@ -176,106 +185,62 @@ export default function AnalyzePage() {
           </section>
 
           <section className="flex-1">
-            {!analysis ? (
+            {!analysisText ? (
               <div className="rounded-2xl border border-stone-200 bg-white p-8">
                 <h2 className="font-serif text-lg font-semibold text-stone-900">
                   Results
                 </h2>
                 <p className="mt-2 text-stone-600">
-                  Upload or paste a document to see the plain-English summary, red flags,
-                  and signing score.
+                  Upload or paste a document to see the plain-English summary, risks,
+                  and a focused view of issues.
                 </p>
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="rounded-2xl border border-stone-200 bg-white p-8">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <h2 className="font-serif text-lg font-semibold text-stone-900">
-                      “Should I sign?” score
-                    </h2>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-4 py-2">
-                      <span className="text-2xl font-semibold text-stone-900">
-                        {analysis.shouldISignScore}
-                      </span>
-                      <span className="text-sm text-stone-600">/ 100</span>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-stone-700">{analysis.rationale}</p>
-                </div>
+                <div className="rounded-2xl border border-stone-200 bg-white p-8 font-sans text-sm text-stone-700 leading-relaxed">
+                  {analysisText.split("\n").map((line, i) => {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) return <div key={i} className="h-4" />;
 
-                <div className="rounded-2xl border border-stone-200 bg-white p-8">
-                  <h3 className="font-serif text-lg font-semibold text-stone-900">
-                    Plain-English summary
-                  </h3>
-                  <p className="mt-3 whitespace-pre-wrap text-stone-700">
-                    {analysis.plainEnglishSummary}
-                  </p>
-                </div>
+                    const renderInlineFormatting = (text: string) => {
+                      const parts = text.split(/(\*\*.*?\*\*)/g);
+                      return parts.map((part, index) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                          return <strong key={index} className="text-stone-900">{part.slice(2, -2)}</strong>;
+                        }
+                        return part;
+                      });
+                    };
 
-                <div className="rounded-2xl border border-stone-200 bg-white p-8">
-                  <h3 className="font-serif text-lg font-semibold text-stone-900">
-                    Red flags
-                  </h3>
-                  {analysis.redFlags.length === 0 ? (
-                    <p className="mt-3 text-stone-600">No obvious red flags detected.</p>
-                  ) : (
-                    <div className="mt-4 space-y-4">
-                      {analysis.redFlags.map((rf, idx) => (
-                        <div key={idx} className="rounded-xl border border-stone-200 p-5">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <div className="font-medium text-stone-900">{rf.title}</div>
-                              <p className="mt-2 text-sm text-stone-700">{rf.whyItMatters}</p>
-                              {rf.suggestedEdit ? (
-                                <p className="mt-2 text-sm text-stone-600">
-                                  <span className="font-medium text-stone-800">Suggested edit:</span>{" "}
-                                  {rf.suggestedEdit}
-                                </p>
-                              ) : null}
-                            </div>
-                            <span
-                              className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${severityStyles(
-                                rf.severity,
-                              )}`}
-                            >
-                              {rf.severity.toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                    const rawText = trimmedLine.replace(/\*\*/g, "").trim();
 
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="rounded-2xl border border-stone-200 bg-white p-8">
-                    <h3 className="font-serif text-lg font-semibold text-stone-900">
-                      Key clauses to review
-                    </h3>
-                    <ul className="mt-4 list-disc space-y-2 pl-5 text-stone-700">
-                      {analysis.keyClauses.length ? (
-                        analysis.keyClauses.map((c, i) => <li key={i}>{c}</li>)
-                      ) : (
-                        <li>Not specified (document may be incomplete).</li>
-                      )}
-                    </ul>
-                  </div>
-                  <div className="rounded-2xl border border-stone-200 bg-white p-8">
-                    <h3 className="font-serif text-lg font-semibold text-stone-900">
-                      Next steps
-                    </h3>
-                    <ul className="mt-4 list-disc space-y-2 pl-5 text-stone-700">
-                      {analysis.nextSteps.length ? (
-                        analysis.nextSteps.map((s, i) => <li key={i}>{s}</li>)
-                      ) : (
-                        <li>Ask for clarification on ambiguous terms.</li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
+                    // Main section headers
+                    const mainHeaders = [
+                      "Document Review Summary",
+                      "High-Risk Issues",
+                      "Medium-Risk Issues",
+                      "Low-Risk Issues",
+                      "Plain English Summary (maximum 4 lines)",
+                      "Plain English Summary",
+                      "Action Items Before Signing",
+                      "Clause-by-Clause Analysis"
+                    ];
 
-                <div className="rounded-2xl border border-stone-200 bg-stone-50 p-6 text-sm text-stone-600">
-                  {analysis.disclaimer}
+                    if (mainHeaders.includes(rawText) || trimmedLine.startsWith("------")) {
+                      return (
+                        <h2 key={i} className="font-serif text-lg font-bold text-stone-900 mt-6 mb-2">
+                          {rawText}
+                        </h2>
+                      );
+                    }
+
+                    // Numbered lists or bold start lines
+                    if (trimmedLine.match(/^(\d+\.\s+)(.*)/)) {
+                      return <div key={i} className="mt-4 mb-1">{renderInlineFormatting(trimmedLine)}</div>;
+                    }
+
+                    return <p key={i} className="mb-2">{renderInlineFormatting(trimmedLine)}</p>;
+                  })}
                 </div>
               </div>
             )}

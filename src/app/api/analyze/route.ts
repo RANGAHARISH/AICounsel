@@ -3,18 +3,22 @@ import { z } from "zod";
 import mammoth from "mammoth";
 import { auth } from "@/lib/auth";
 
+const RedFlagSchema = z.object({
+  title: z.string().min(1),
+  severity: z.enum(["low", "medium", "high"]),
+  whyItMatters: z.string().min(1),
+  suggestedEdit: z.string().optional().default(""),
+  clauseExcerpt: z.string().optional().default(""),
+  clauseLabel: z.string().optional().default(""),
+  category: z.string().optional().default(""),
+  recommendedActions: z.array(z.string()).optional().default([]),
+});
+
 const AnalysisSchema = z.object({
+  // Original document text we analyzed (added on the server)
+  sourceText: z.string().min(1),
   plainEnglishSummary: z.string().min(1),
-  redFlags: z
-    .array(
-      z.object({
-        title: z.string().min(1),
-        severity: z.enum(["low", "medium", "high"]),
-        whyItMatters: z.string().min(1),
-        suggestedEdit: z.string().optional().default(""),
-      }),
-    )
-    .default([]),
+  redFlags: z.array(RedFlagSchema).default([]),
   shouldISignScore: z.number().int().min(0).max(100),
   rationale: z.string().min(1),
   keyClauses: z.array(z.string()).default([]),
@@ -65,26 +69,52 @@ async function extractTextFromFile(file: File): Promise<string> {
 }
 
 function buildPrompt(documentText: string) {
-  return [
-    "You are AICounsel, a legal document analysis assistant.",
-    "Task: explain the document in plain English and highlight risks.",
-    "Be careful: do not hallucinate clauses not present. If missing, say so.",
-    "Return STRICT JSON ONLY matching this schema:",
-    "{",
-    '  "plainEnglishSummary": string,',
-    '  "redFlags": [{ "title": string, "severity": "low"|"medium"|"high", "whyItMatters": string, "suggestedEdit": string }],',
-    '  "shouldISignScore": number (0-100),',
-    '  "rationale": string,',
-    '  "keyClauses": string[],',
-    '  "nextSteps": string[],',
-    '  "disclaimer": string',
-    "}",
-    "Scoring guidance:",
-    "- 0 means extremely risky / do not sign; 100 means low risk / typical terms.",
-    "- If the document is incomplete or too short, lower confidence and note it.",
-    "Document text begins:",
-    documentText,
-  ].join("\n");
+  return `You are a Contract Review and Explanation System designed to help non-lawyers understand legal documents in simple, clear, human language. Your output must look like a refined, professional human-written contract analysis, not an AI output. It must be extremely simple and concise.
+
+CRITICAL RULES FOR FORMATTING - YOU MUST OBEY THESE:
+1. Do NOT use ANY bullet points. No asterisks (*), no hyphens (-), no bullet dots (•). NEVER use list markers.
+2. Do NOT use hashtags (#), code fences, heavy emojis, or decorative symbols. You MAY use markdown bolding (**) for headers and emphasis only.
+3. Write ONLY in short sentences and concise paragraphs.
+4. Use clean section headings in bold (for example: **Document Review Summary**).
+5. Explain everything in the simplest possible English.
+
+Your Output Structure (Must Follow Exactly):
+
+**Document Review Summary**
+Should I Sign? Score: (0–100)
+Immediate recommendation: (Yes / No / Fix Before Signing)
+Reason: (One-sentence explanation of the score)
+
+**High-Risk Issues**
+1. Issue Name (Risk Level): Explain what the clause means and why it is risky in a couple of short sentences.
+(Do not use bullet points or asterisks. Number each issue.)
+
+**Medium-Risk Issues**
+1. Issue Name (Risk Level): Short explanation for each. Give concise, plain text descriptions.
+
+**Low-Risk Issues**
+1. Issue Name (Risk Level): Short explanation for each.
+
+**Plain English Summary**
+Write a simple explanation of the entire agreement in easy English paragraph form, maximum 4 lines.
+
+**Action Items Before Signing**
+Number each item (e.g., 1., 2., 3.). List the key fixes, clarifications or negotiations required in plain text sentences. DO NOT use bullet points.
+
+**Clause-by-Clause Analysis**
+Format the name of each clause in bold. Then, write a very short, concise sentence explaining its Meaning. Then write its Risk Level. Finally, explicitly state if there is Missing Information. 
+Example format:
+**1. Demise, Term, and Rent Payment**
+Meaning: The lessor grants the lease specifies duration, start date, and rent amount.
+Risk Level: Medium.
+Missing Information: Exact location, duration in years, and specific rent amount.
+
+Style Requirements:  
+Absolutely NO bullet points or asterisks (*). Plain English only. Neutral, factual, concise. Emphasize missing fields clearly by writing [Missing Information]. Avoid sounding like an AI.
+
+Now analyze the uploaded legal document accordingly, keeping it extremely brief.
+
+${documentText}`;
 }
 
 export async function POST(request: Request) {
@@ -137,7 +167,6 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use a current, supported Gemini model for v1beta
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
     });
@@ -146,21 +175,7 @@ export async function POST(request: Request) {
     const result = await model.generateContent(prompt);
     const raw = result.response.text().trim();
 
-    const jsonText = raw
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/```$/i, "")
-      .trim();
-
-    const parsed = AnalysisSchema.safeParse(JSON.parse(jsonText));
-    if (!parsed.success) {
-      return Response.json(
-        { error: "Model returned invalid output", raw },
-        { status: 502 },
-      );
-    }
-
-    return Response.json({ data: parsed.data });
+    return Response.json({ text: raw });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return Response.json({ error: message }, { status: 500 });

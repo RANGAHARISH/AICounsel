@@ -30,16 +30,16 @@ export default async function Home() {
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/signup"
+              href="/analyze"
               className="rounded-lg bg-stone-900 px-6 py-3 text-base font-medium text-white transition hover:bg-stone-800"
             >
-              Try it free
+              Document Analysis
             </Link>
             <Link
-              href="/login"
+              href="/compliance"
               className="rounded-lg border border-stone-300 px-6 py-3 text-base font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
             >
-              Log in
+              Compliance Manager
             </Link>
           </div>
         </div>
@@ -144,16 +144,16 @@ export default async function Home() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/signup"
+              href="/analyze"
               className="rounded-lg bg-[var(--accent)] px-6 py-3 text-base font-medium text-white transition hover:bg-[var(--accent-hover)]"
             >
-              Create free account
+              Document Analysis
             </Link>
             <Link
-              href="/login"
+              href="/compliance"
               className="rounded-lg border border-stone-300 px-6 py-3 text-base font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
             >
-              Log in
+              Compliance Manager
             </Link>
           </div>
         </div>
