@@ -29,7 +29,13 @@ export default function SignupPage() {
         password,
       });
       if (err) {
-        setError(err.message ?? "Sign up failed");
+        if (err.code === "USER_ALREADY_EXISTS") {
+          setError("An account with this email already exists.");
+        } else if (err.message?.toLowerCase().includes("origin")) {
+          setError("Session failed due to an origin mismatch. Please check your browser settings or use localhost.");
+        } else {
+          setError(err.message ?? "Sign up failed");
+        }
         return;
       }
       if (data) {

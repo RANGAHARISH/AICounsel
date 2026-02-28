@@ -12,6 +12,7 @@ export const auth = betterAuth({
   },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
+  trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:3000", "http://127.0.0.1:3000"],
   plugins: [nextCookies()],
   user: {
     additionalFields: {

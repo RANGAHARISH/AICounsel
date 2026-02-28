@@ -27,7 +27,13 @@ export default function LoginPage() {
         password,
       });
       if (err) {
-        setError(err.message ?? "Sign in failed");
+        if (err.code === "INVALID_EMAIL_OR_PASSWORD") {
+          setError("Incorrect email or password.");
+        } else if (err.message?.toLowerCase().includes("origin")) {
+          setError("Sign-in failed due to an origin mismatch. Please check your browser settings or use localhost.");
+        } else {
+          setError(err.message ?? "Sign in failed");
+        }
         return;
       }
       if (data) {
