@@ -137,7 +137,10 @@ export async function POST(request: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Use a current, supported Gemini model for v1beta
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+    });
 
     const prompt = buildPrompt(text.slice(0, 120_000));
     const result = await model.generateContent(prompt);
