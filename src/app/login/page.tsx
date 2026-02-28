@@ -40,8 +40,9 @@ export default function LoginPage() {
         router.push("/");
         router.refresh();
       }
-    } catch {
-      setError("Something went wrong");
+    } catch (e) {
+      console.error("Login exception:", e);
+      setError(e instanceof Error ? e.message : "An unexpected error occurred. Please check your connection.");
     } finally {
       setLoading(false);
     }

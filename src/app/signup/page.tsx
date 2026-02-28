@@ -42,8 +42,9 @@ export default function SignupPage() {
         router.push("/");
         router.refresh();
       }
-    } catch {
-      setError("Something went wrong");
+    } catch (e) {
+      console.error("Signup exception:", e);
+      setError(e instanceof Error ? e.message : "An unexpected error occurred. Please check your connection.");
     } finally {
       setLoading(false);
     }
