@@ -4,41 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import {
-  DocumentViewer,
-  type RedFlagForViewer,
-} from "@/components/DocumentViewer";
-import { IssuesPanel } from "@/components/IssuesPanel";
-
-type RedFlag = RedFlagForViewer & {
-  whyItMatters: string;
-  suggestedEdit?: string;
-  category?: string;
-  recommendedActions?: string[];
-};
-
-type Analysis = {
-  sourceText: string;
-  plainEnglishSummary: string;
-  redFlags: RedFlag[];
-  shouldISignScore: number;
-  rationale: string;
-  keyClauses: string[];
-  nextSteps: string[];
-  disclaimer: string;
-};
-
-function severityStyles(severity: RedFlag["severity"]) {
-  switch (severity) {
-    case "high":
-      return "bg-red-50 text-red-700 border-red-200";
-    case "medium":
-      return "bg-amber-50 text-amber-800 border-amber-200";
-    default:
-      return "bg-emerald-50 text-emerald-800 border-emerald-200";
-  }
-}
-
 export default function AnalyzePage() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();

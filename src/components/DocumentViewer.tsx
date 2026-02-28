@@ -7,6 +7,8 @@ export type RedFlagForViewer = {
   severity: Severity;
   clauseExcerpt?: string;
   clauseLabel?: string;
+  whyItMatters?: string;
+  recommendedActions?: string[];
 };
 
 type Highlight = {
