@@ -9,6 +9,9 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    async sendResetPassword({ user, url }) {
+      console.log(`\n--- PASSWORD RESET OTP LINK ---\nUser: ${user.email}\nLink: ${url}\n-------------------------------\n`);
+    },
   },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,

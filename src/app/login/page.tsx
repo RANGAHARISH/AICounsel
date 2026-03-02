@@ -70,7 +70,17 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           {error && (
             <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
+              <div className="flex items-center justify-between">
+                <span>{error}</span>
+                {error === "Incorrect email or password." && (
+                  <Link
+                    href="/forgot-password"
+                    className="ml-2 font-medium underline hover:text-red-800 transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
+                )}
+              </div>
             </div>
           )}
           <div>
@@ -102,6 +112,14 @@ export default function LoginPage() {
               className="mt-2 block w-full rounded-lg border border-stone-300 px-4 py-2.5 text-stone-900 placeholder-stone-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
               placeholder="••••••••"
             />
+            <div className="mt-1.5 flex justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-xs font-medium text-[var(--accent)] hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
           <button
             type="submit"
