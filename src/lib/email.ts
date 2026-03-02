@@ -9,7 +9,7 @@ export async function sendOTPEmail(email: string, otp: string) {
     const text = `
     Your 6-digit password reset OTP is: ${otp}
     
-    This OTP will expire in exactly 10 minutes.
+    This OTP will expire in exactly 60 seconds.
     
     If you did not request a password reset, please ignore this email and ensure your account is secure.
     

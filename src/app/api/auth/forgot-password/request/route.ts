@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
 
         if (rateLimitCheck.rows.length > 0) {
             const lastRequest = new Date(rateLimitCheck.rows[0].last_request_at);
-            if (lastRequest > new Date(Date.now() - 60 * 1000)) { // 1 min cooldown
+            if (lastRequest > new Date(Date.now() - 30 * 1000)) { // 30 second cooldown
                 console.log(`[AUTH_TRACE] Rate limited: ${email}`);
-                return NextResponse.json({ error: "Please wait a moment before requesting another OTP." }, { status: 429 });
+                return NextResponse.json({ error: "Please wait 30 seconds before requesting another OTP." }, { status: 429 });
             }
         }
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         console.log("[AUTH_TRACE] Generating OTP...");
         const otp = generateOTP();
         const hashedOTP = await hashOTP(otp, email);
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        const expiresAt = new Date(Date.now() + 60 * 1000); // 1 minute (60 seconds)
 
         // 4. Store/Update in Database
         console.log("[AUTH_TRACE] Storing OTP...");
