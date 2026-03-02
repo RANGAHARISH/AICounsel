@@ -1,9 +1,5 @@
 import crypto from "crypto";
-import { Pool } from "pg";
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
+import { pool } from "@/lib/db";
 
 /**
  * Generates a cryptographically secure 6-digit numeric OTP.

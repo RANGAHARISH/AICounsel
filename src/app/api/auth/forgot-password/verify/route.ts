@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import { pool } from "@/lib/db";
 import { verifyOTP } from "@/lib/otp";
 import { auth } from "@/lib/auth";
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
 
 export async function POST(req: NextRequest) {
     try {
