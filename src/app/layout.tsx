@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Source_Serif_4, DM_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const sourceSerif = Source_Serif_4({
@@ -27,6 +28,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${sourceSerif.variable} ${dmSans.variable} antialiased`} suppressHydrationWarning>
         {children}
+        <Analytics />
       </body>
     </html>
   );
