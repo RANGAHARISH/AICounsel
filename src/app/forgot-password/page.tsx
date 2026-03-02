@@ -27,7 +27,8 @@ export default function ForgotPasswordPage() {
             const data = await response.json();
 
             if (!response.ok) {
-                setError(data.error ?? "Failed to send reset code.");
+                const errorMsg = data.debug ? `${data.error} (${data.debug})` : (data.error ?? "Failed to send reset code.");
+                setError(errorMsg);
                 return;
             }
 
