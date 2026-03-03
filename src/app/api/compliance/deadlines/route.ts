@@ -67,29 +67,63 @@ export async function POST(req: Request) {
 
         const business = ownerCheck.rows[0];
 
-        // MVP Logic: Just assign standard requirements
-        const reqs = await pool.query("SELECT * FROM compliance_requirements");
+        // Fetch requirements matching this business's profile
+        // - Specific state or NULL (Federal)
+        // - Matching country
+        // - TODO: Industry specific filtering
+        const reqs = await pool.query(
+            `SELECT * FROM compliance_requirements 
+             WHERE jurisdiction_country = $1 
+             AND (jurisdiction_state = $2 OR jurisdiction_state IS NULL)`,
+            [business.country, business.state]
+        );
 
+        let createdCount = 0;
         for (const req of reqs.rows) {
-            // Calculate a dummy due date based on frequency
+            // Check if deadline already exists for one-time filings
+            if (req.default_frequency === 'one-time') {
+                const existing = await pool.query(
+                    "SELECT id FROM business_deadlines WHERE business_id = $1 AND requirement_id = $2",
+                    [businessId, req.id]
+                );
+                if (existing.rows.length > 0) continue;
+            }
+
+            // Calculate due date based on frequency
             const today = new Date();
             let dueDate = new Date();
+
             if (req.default_frequency === 'annual') {
-                dueDate.setFullYear(today.getFullYear(), 3, 15); // April 15
+                // Default to end of next fiscal quarter or specific date logic
+                dueDate.setFullYear(today.getFullYear(), 11, 31); // Dec 31 for now
                 if (dueDate < today) dueDate.setFullYear(today.getFullYear() + 1);
+            } else if (req.default_frequency === 'biennial') {
+                dueDate.setFullYear(today.getFullYear() + 1, 11, 31);
+            } else if (req.default_frequency === 'one-time') {
+                // Typically 90 days from registration for things like BOI
+                const regDate = business.registration_date ? new Date(business.registration_date) : today;
+                dueDate = new Date(regDate);
+                dueDate.setDate(dueDate.getDate() + 90);
+                if (dueDate < today) {
+                    // If overdue based on registration, set to 30 days from now as a "grace" period warning
+                    dueDate = new Date();
+                    dueDate.setDate(dueDate.getDate() + 30);
+                }
             } else {
-                dueDate.setMonth(today.getMonth() + 3); // 3 months from now
+                dueDate.setMonth(today.getMonth() + 3);
             }
 
             await pool.query(
                 `INSERT INTO business_deadlines 
-         (business_id, requirement_id, title, description, due_date)
-         VALUES ($1, $2, $3, $4, $5)`,
+                 (business_id, requirement_id, title, description, due_date)
+                 VALUES ($1, $2, $3, $4, $5)
+                 ON CONFLICT DO NOTHING`,
                 [businessId, req.id, req.title, req.description, dueDate]
             );
+            createdCount++;
         }
 
-        return NextResponse.json({ success: true, count: reqs.rows.length });
+        return NextResponse.json({ success: true, count: createdCount });
     } catch (error) {
         console.error("Error generating deadlines:", error);
         return NextResponse.json({ error: "Failed to generate" }, { status: 500 });

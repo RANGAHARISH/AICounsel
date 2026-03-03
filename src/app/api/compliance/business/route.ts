@@ -33,7 +33,18 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { name, entity_type, state, industry } = body;
+        const {
+            name,
+            entity_type,
+            state,
+            industry,
+            country = 'US',
+            employees_count = 0,
+            has_contractors = false,
+            collects_personal_data = false,
+            has_physical_premises = false,
+            registration_date = null
+        } = body;
 
         // Check if user already has a business
         const existing = await pool.query(
@@ -46,19 +57,37 @@ export async function POST(req: Request) {
             // Update
             const res = await pool.query(
                 `UPDATE businesses 
-         SET name = $1, entity_type = $2, state = $3, industry = $4 
-         WHERE user_id = $5 
-         RETURNING *`,
-                [name, entity_type, state, industry, userId]
+                 SET name = $1, entity_type = $2, state = $3, industry = $4,
+                     country = $5, employees_count = $6, has_contractors = $7,
+                     collects_personal_data = $8, has_physical_premises = $9,
+                     registration_date = $10
+                 WHERE user_id = $11 
+                 RETURNING *`,
+                [
+                    name, entity_type, state, industry,
+                    country, employees_count, has_contractors,
+                    collects_personal_data, has_physical_premises,
+                    registration_date, userId
+                ]
             );
             business = res.rows[0];
         } else {
             // Insert
             const res = await pool.query(
-                `INSERT INTO businesses (user_id, name, entity_type, state, industry) 
-         VALUES ($1, $2, $3, $4, $5) 
-         RETURNING *`,
-                [userId, name, entity_type, state, industry]
+                `INSERT INTO businesses (
+                    user_id, name, entity_type, state, industry,
+                    country, employees_count, has_contractors,
+                    collects_personal_data, has_physical_premises,
+                    registration_date
+                ) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+                 RETURNING *`,
+                [
+                    userId, name, entity_type, state, industry,
+                    country, employees_count, has_contractors,
+                    collects_personal_data, has_physical_premises,
+                    registration_date
+                ]
             );
             business = res.rows[0];
         }
