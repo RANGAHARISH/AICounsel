@@ -109,9 +109,6 @@ export default function LoginPage() {
         <h1 className="font-serif text-2xl font-semibold text-stone-900">Log in</h1>
         <p className="mt-2 text-stone-600">Welcome back. Sign in to your account.</p>
 
-        <h1 className="font-serif text-2xl font-semibold text-stone-900">Log in</h1>
-        <p className="mt-2 text-stone-600">Welcome back. Sign in to your account.</p>
-
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
           {error && (
             <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
