@@ -104,8 +104,8 @@ function ResetPasswordForm() {
     }
 
     return (
-        <div className="space-y-6">
-            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 {error && (
                     <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
                         {error}
@@ -207,8 +207,8 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
     return (
-        <div className="min-h-screen bg-[var(--background)]">
-            <header className="border-b border-stone-200/80 bg-white/80 backdrop-blur-sm">
+        <div className="h-screen flex flex-col overflow-hidden bg-[var(--background)]">
+            <header className="shrink-0 border-b border-stone-200/80 bg-white/80 backdrop-blur-sm">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
                     <Link href="/" className="font-serif text-xl font-semibold text-stone-900">
                         AICounsel
@@ -221,9 +221,11 @@ export default function ResetPasswordPage() {
                 </div>
             </header>
 
-            <main className="mx-auto max-w-md px-6 pt-16">
-                <h1 className="font-serif text-2xl font-semibold text-stone-900">Finalize Security Reset</h1>
-                <p className="mt-2 text-stone-600">Enter your 6-digit code and choose a new password.</p>
+            <main className="flex-1 flex flex-col justify-center mx-auto w-full max-w-md px-6 py-8">
+                <div>
+                    <h1 className="font-serif text-2xl font-semibold text-stone-900">Finalize Security Reset</h1>
+                    <p className="mt-2 text-stone-600">Enter your 6-digit code and choose a new password.</p>
+                </div>
 
                 <Suspense fallback={<div className="mt-8 text-stone-600">Loading secure environment...</div>}>
                     <ResetPasswordForm />
