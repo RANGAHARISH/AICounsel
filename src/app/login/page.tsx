@@ -109,21 +109,8 @@ export default function LoginPage() {
         <h1 className="font-serif text-2xl font-semibold text-stone-900">Log in</h1>
         <p className="mt-2 text-stone-600">Welcome back. Sign in to your account.</p>
 
-        {/* Tab Switcher */}
-        <div className="mt-8 flex rounded-lg bg-stone-100 p-1">
-          <button
-            onClick={() => { setMethod("password"); setError(""); }}
-            className={`flex-1 rounded-md py-1.5 text-sm font-medium transition ${method === "password" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}
-          >
-            Password
-          </button>
-          <button
-            onClick={() => { setMethod("otp"); setError(""); }}
-            className={`flex-1 rounded-md py-1.5 text-sm font-medium transition ${method === "otp" ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"}`}
-          >
-            Secure OTP
-          </button>
-        </div>
+        <h1 className="font-serif text-2xl font-semibold text-stone-900">Log in</h1>
+        <p className="mt-2 text-stone-600">Welcome back. Sign in to your account.</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
           {error && (
