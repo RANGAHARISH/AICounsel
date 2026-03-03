@@ -17,12 +17,13 @@ export async function sendOTPEmail(email: string, otp: string) {
   `;
 
     if (!apiKey) {
-        console.log("\n--- [DEV MODE] SECURE OTP EMAIL ---");
+        console.log("\n--- [DEV MODE] SECURE OTP EMAIL (API KEY MISSING) ---");
         console.log(`To: ${email}`);
         console.log(`Subject: ${subject}`);
-        console.log(`Content: ${text}`);
+        console.log(`OTP Code: ${otp}`);
+        console.log("Check this console for the code since RESEND_API_KEY is not set.");
         console.log("-----------------------------------\n");
-        return { success: true, message: "Email sent (Logged to console)" };
+        return { success: true, message: "Email logged to terminal (No API Key)" };
     }
 
     try {
@@ -33,7 +34,8 @@ export async function sendOTPEmail(email: string, otp: string) {
                 Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify({
-                from: "AICounsel <noreply@aicounsel.ai>", // Update this with your verified domain
+                // Use resend.dev for testing if no verified domain is available
+                from: "AICounsel <onboarding@resend.dev>",
                 to: [email],
                 subject: subject,
                 text: text,

@@ -2,6 +2,8 @@ import { betterAuth } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { Pool } from "pg";
+import { emailOTP } from "better-auth/plugins";
+import { sendOTPEmail } from "./email";
 
 export const auth = betterAuth({
   database: new Pool({
@@ -20,7 +22,17 @@ export const auth = betterAuth({
     "http://127.0.0.1:3000",
     "http://localhost:3000"
   ],
-  plugins: [nextCookies()],
+  plugins: [
+    nextCookies(),
+    emailOTP({
+      async sendVerificationOTP({ email, otp, type }: { email: string; otp: string; type: string }) {
+        console.log(`[AUTH_TRACE] Sending ${type} OTP to ${email}`);
+        await sendOTPEmail(email, otp);
+      },
+      expiresIn: 60,
+    }),
+  ],
+
   user: {
     additionalFields: {
       role: {
