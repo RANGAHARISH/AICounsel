@@ -20,6 +20,19 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timer]);
 
   async function handleSendOTP() {
     if (!email) {
@@ -38,6 +51,7 @@ export default function LoginPage() {
         return;
       }
       setOtpSent(true);
+      setTimer(60);
     } catch (e) {
       setError("An unexpected error occurred.");
     } finally {
@@ -164,11 +178,11 @@ export default function LoginPage() {
               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center justify-between">
                   <label htmlFor="otp" className="block text-sm font-medium text-stone-700">
-                    Enter Verification Code
+                    6-Digit Secure OTP {timer > 0 && <span className="text-emerald-600 font-mono">(Valid for {timer}s)</span>}
                   </label>
                   <button
                     type="button"
-                    onClick={() => setOtpSent(false)}
+                    onClick={() => { setOtpSent(false); setTimer(0); }}
                     className="text-xs text-[var(--accent)] hover:underline"
                   >
                     Change email
@@ -185,7 +199,7 @@ export default function LoginPage() {
                   placeholder="000000"
                 />
                 <p className="mt-2 text-xs text-stone-500">
-                  Please check your inbox for the 6-digit code.
+                  {timer > 0 ? "Please check your inbox for the 6-digit code." : "OTP has expired. Please request a new one."}
                 </p>
               </div>
             )
