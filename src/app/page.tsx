@@ -132,31 +132,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-stone-200/80 py-20">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <h2 className="font-serif text-2xl font-semibold text-stone-900 md:text-3xl">
-            Ready to understand your next contract?
-          </h2>
-          <p className="mt-4 text-stone-600">
-            Upload a document, get answers in seconds.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/analyze"
-              className="rounded-lg bg-[var(--accent)] px-6 py-3 text-base font-medium text-white transition hover:bg-[var(--accent-hover)]"
-            >
-              Document Analysis
-            </Link>
-            <Link
-              href="/compliance"
-              className="rounded-lg border border-stone-300 px-6 py-3 text-base font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
-            >
-              Compliance Manager
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="border-t border-stone-200/80 py-8">
