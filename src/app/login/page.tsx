@@ -98,7 +98,11 @@ export default function LoginPage() {
       }
     } catch (e) {
       console.error("Login exception:", e);
-      setError(e instanceof Error ? e.message : "An unexpected error occurred.");
+      if (e instanceof TypeError && e.message.includes("fetch")) {
+        setError("Network error: Failed to connect to the server. Please check if the backend is running.");
+      } else {
+        setError(e instanceof Error ? e.message : "An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }

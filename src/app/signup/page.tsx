@@ -44,7 +44,11 @@ export default function SignupPage() {
       }
     } catch (e) {
       console.error("Signup exception:", e);
-      setError(e instanceof Error ? e.message : "An unexpected error occurred. Please check your connection.");
+      if (e instanceof TypeError && e.message.includes("fetch")) {
+        setError("Network error: Failed to connect to the server. Please check if the backend is running.");
+      } else {
+        setError(e instanceof Error ? e.message : "An unexpected error occurred. Please check your connection.");
+      }
     } finally {
       setLoading(false);
     }

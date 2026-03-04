@@ -1,0 +1,56 @@
+
+> aicounsel@0.1.0 build
+> next build
+
+   ??? Next.js 15.1.6
+   - Environments: .env
+
+   Creating an optimized production build ...
+node.exe : Failed to 
+compile.
+At C:\Program Files\no
+dejs\npm.ps1:29 char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (Failed to    
+ compile.:String)     
+[], RemoteExcepti    
+on
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+
+./src/lib/auth.ts
+Module not found: 
+Can't resolve 'pg'
+
+https://nextjs.org/doc
+s/messages/module-not-
+found
+
+Import trace for 
+requested module:
+./src/app/page.tsx
+
+./src/lib/db.ts
+Module not found: 
+Can't resolve 'pg'
+
+https://nextjs.org/doc
+s/messages/module-not-
+found
+
+Import trace for 
+requested module:
+./src/app/api/complian
+ce/deadlines/route.ts
+
+
+> Build failed 
+because of webpack 
+errors
