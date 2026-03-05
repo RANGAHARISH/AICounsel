@@ -61,13 +61,15 @@ async function extractTextFromFile(file: File): Promise<string> {
 
   if (type.includes("pdf") || name.endsWith(".pdf")) {
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    const pdfWorker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
-    // @ts-ignore
-    pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+    // In Node.js environment, we don't strictly need to set workerSrc if we import it
+    // but if we do, it should be a string or we can omit it if using the legacy build correctly.
+    await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
 
     const loadingTask = pdfjs.getDocument({
       data: new Uint8Array(buf),
       useSystemFonts: true,
+      // Disable worker to avoid workerSrc issues in Node.js
+      disableWorker: true,
     });
     const pdf = await loadingTask.promise;
     let out = "";
@@ -198,7 +200,7 @@ export async function POST(request: Request) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
     });
 
     const prompt = buildPrompt(text.slice(0, 120_000));
@@ -207,8 +209,10 @@ export async function POST(request: Request) {
 
     return Response.json({ text: raw });
   } catch (e) {
+    console.error("ANALYSIS ERROR:", e);
     const message = e instanceof Error ? e.message : "Unknown error";
     return Response.json({ error: message }, { status: 500 });
   }
 }
+
 
