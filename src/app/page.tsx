@@ -36,9 +36,10 @@ export default async function Home() {
             </Link>
             <Link
               href="/compliance"
-              className="rounded-lg border border-stone-300 px-6 py-3 text-base font-medium text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
+              className="flex flex-col items-center rounded-lg border border-stone-300 px-6 py-3 transition hover:border-stone-400 hover:bg-stone-50"
             >
-              Compliance Manager
+              <span className="text-base font-medium text-stone-700">Compliance Manager</span>
+              <span className="text-xs text-stone-500 font-normal">In Development</span>
             </Link>
           </div>
         </div>
