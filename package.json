@@ -12,6 +12,7 @@
     "@google/generative-ai": "^0.24.1",
     "@vercel/analytics": "^1.6.1",
     "better-auth": "^1.4.20",
+    "groq-sdk": "^0.37.0",
     "mammoth": "^1.11.0",
     "next": "15.5.7",
     "pdfjs-dist": "^5.4.624",

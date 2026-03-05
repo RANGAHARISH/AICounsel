@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { z } from "zod";
 import mammoth from "mammoth";
 import { auth } from "@/lib/auth";
@@ -153,12 +153,12 @@ ${documentText}`;
 function getFriendlyErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
 
-  // Gemini specific quota errors
-  if (message.includes("429") || message.includes("Quota exceeded") || message.includes("Too Many Requests")) {
-    return "The AI analysis quota has been reached for today. Please try again tomorrow or later.";
+  // API specific quota errors
+  if (message.includes("429") || message.includes("Quota") || message.includes("rate_limit") || message.includes("Too Many Requests")) {
+    return "The AI analysis quota has been reached. Please try again later.";
   }
 
-  // Gemini safety/content errors
+  // Safety/content errors
   if (message.includes("SAFETY") || message.includes("blocked")) {
     return "The document could not be analyzed due to safety filters. Please ensure the content is appropriate.";
   }
@@ -212,22 +212,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY; // Fallback just in case
     if (!apiKey) {
       return Response.json(
-        { error: "Server missing GEMINI_API_KEY" },
+        { error: "Server missing API Key" },
         { status: 500 },
       );
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+    const prompt = buildPrompt(text.slice(0, 120_000));
+    const groq = new Groq({ apiKey });
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.2,
     });
 
-    const prompt = buildPrompt(text.slice(0, 120_000));
-    const result = await model.generateContent(prompt);
-    const raw = result.response.text().trim();
+    const raw = chatCompletion.choices[0]?.message?.content?.trim() || "";
 
     return Response.json({ text: raw });
   } catch (e) {
