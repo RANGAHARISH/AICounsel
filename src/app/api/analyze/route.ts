@@ -150,6 +150,28 @@ Now analyze the uploaded legal document accordingly, keeping it extremely brief.
 ${documentText}`;
 }
 
+function getFriendlyErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+
+  // Gemini specific quota errors
+  if (message.includes("429") || message.includes("Quota exceeded") || message.includes("Too Many Requests")) {
+    return "The AI analysis quota has been reached for today. Please try again tomorrow or later.";
+  }
+
+  // Gemini safety/content errors
+  if (message.includes("SAFETY") || message.includes("blocked")) {
+    return "The document could not be analyzed due to safety filters. Please ensure the content is appropriate.";
+  }
+
+  // Connection/Server errors
+  if (message.includes("fetch failed") || message.includes("ECONNRESET")) {
+    return "There was a connection issue with the AI service. Please check your internet and try again.";
+  }
+
+  // Default fallback
+  return "We couldn't analyze the document right now. Please try again in a few minutes.";
+}
+
 export async function POST(request: Request) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -210,8 +232,8 @@ export async function POST(request: Request) {
     return Response.json({ text: raw });
   } catch (e) {
     console.error("ANALYSIS ERROR:", e);
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return Response.json({ error: message }, { status: 500 });
+    const friendlyMessage = getFriendlyErrorMessage(e);
+    return Response.json({ error: friendlyMessage }, { status: 500 });
   }
 }
 

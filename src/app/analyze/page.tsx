@@ -41,12 +41,15 @@ export default function AnalyzePage() {
         | { text: string }
         | { error: string; raw?: string };
       if (!res.ok) {
-        setError("error" in json ? json.error : "Request failed");
+        const errorMsg = "error" in json ? json.error : "Request failed";
+        console.error("Analysis Request Failed:", errorMsg, json);
+        setError(errorMsg);
         return;
       }
       if ("text" in json) setAnalysisText(json.text);
-    } catch {
-      setError("Something went wrong");
+    } catch (err) {
+      console.error("Frontend Analysis Error:", err);
+      setError("Something went wrong with the connection. Please try again.");
     } finally {
       setLoading(false);
     }
