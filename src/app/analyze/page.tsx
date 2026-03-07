@@ -24,6 +24,22 @@ export default function AnalyzePage() {
     return text.trim().length >= 200;
   }, [mode, file, text]);
 
+  async function safeJson(res: Response): Promise<{ text: string } | { error: string; raw?: string }> {
+    const contentType = res.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      // Server returned HTML (e.g. Next.js error page) — read as text for debugging
+      const raw = await res.text();
+      console.error("Non-JSON response received. Status:", res.status, "Body preview:", raw.slice(0, 300));
+      return { error: "The server returned an unexpected response. Please try again." };
+    }
+    try {
+      return await res.json() as { text: string } | { error: string; raw?: string };
+    } catch (parseErr) {
+      console.error("JSON parse error:", parseErr);
+      return { error: "Failed to parse server response. Please try again." };
+    }
+  }
+
   async function onAnalyze() {
     setError("");
     setAnalysisText(null);
@@ -37,9 +53,9 @@ export default function AnalyzePage() {
         method: "POST",
         body: fd,
       });
-      const json = (await res.json()) as
-        | { text: string }
-        | { error: string; raw?: string };
+
+      const json = await safeJson(res);
+
       if (!res.ok) {
         const errorMsg = "error" in json ? json.error : "Request failed";
         console.error("Analysis Request Failed:", errorMsg, json);

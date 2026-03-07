@@ -1,31 +1,13 @@
 import Groq from "groq-sdk";
+// NOTE: pdf-parse is imported dynamically inside extractTextFromFile().
+// Top-level import causes a crash in Next.js because pdf-parse runs
+// fs.readFileSync() on a test PDF at module load time.
 import { z } from "zod";
 import mammoth from "mammoth";
 import { auth } from "@/lib/auth";
+import { NextResponse } from "next/server";
 
-// Polyfill DOMMatrix for pdfjs-dist in Node.js environment
-if (typeof global.DOMMatrix === "undefined") {
-  (global as any).DOMMatrix = class DOMMatrix {
-    m11 = 1; m12 = 0; m13 = 0; m14 = 0;
-    m21 = 0; m22 = 1; m23 = 0; m24 = 0;
-    m31 = 0; m32 = 0; m33 = 1; m34 = 0;
-    m41 = 0; m42 = 0; m43 = 0; m44 = 1;
-    constructor(init: any) {
-      if (Array.isArray(init)) {
-        if (init.length === 6) {
-          this.m11 = init[0]; this.m12 = init[1];
-          this.m21 = init[2]; this.m22 = init[3];
-          this.m41 = init[4]; this.m42 = init[5];
-        } else if (init.length === 16) {
-          this.m11 = init[0]; this.m12 = init[1]; this.m13 = init[2]; this.m14 = init[3];
-          this.m21 = init[4]; this.m22 = init[5]; this.m23 = init[6]; this.m24 = init[7];
-          this.m31 = init[8]; this.m32 = init[9]; this.m33 = init[10]; this.m34 = init[11];
-          this.m41 = init[12]; this.m42 = init[13]; this.m43 = init[14]; this.m44 = init[15];
-        }
-      }
-    }
-  };
-}
+
 
 const RedFlagSchema = z.object({
   title: z.string().min(1),
@@ -56,49 +38,61 @@ function safeText(input: string) {
 
 async function extractTextFromFile(file: File): Promise<string> {
   const buf = Buffer.from(await file.arrayBuffer());
-  const name = (file.name || "").toLowerCase();
-  const type = (file.type || "").toLowerCase();
+  const name = (file.name || "").toLowerCase().trim();
+  const type = (file.type || "").toLowerCase().trim();
 
+  // --- PDF ---
   if (type.includes("pdf") || name.endsWith(".pdf")) {
-    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    // In Node.js environment, we don't strictly need to set workerSrc if we import it
-    // but if we do, it should be a string or we can omit it if using the legacy build correctly.
-    await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
-
-    const loadingTask = pdfjs.getDocument({
-      data: new Uint8Array(buf),
-      useSystemFonts: true,
-      // Disable worker to avoid workerSrc issues in Node.js
-      disableWorker: true,
-    });
-    const pdf = await loadingTask.promise;
-    let out = "";
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const content = await page.getTextContent();
-      const pageText = (content.items as any[])
-        .map((it) => (typeof it?.str === "string" ? it.str : ""))
-        .filter(Boolean)
-        .join(" ");
-      out += pageText + "\n";
+    try {
+      // Dynamic import avoids pdf-parse running fs.readFileSync on a test
+      // file at module load time, which crashes in Next.js server routes.
+      const pdfParse = (await import("pdf-parse")).default;
+      const data = await pdfParse(buf);
+      const extracted = safeText(data.text);
+      if (!extracted) throw new Error("PDF appears to be empty or image-only (scanned). Please use a text-based PDF.");
+      return extracted;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // Re-throw our own descriptive messages directly
+      if (msg.includes("scanned") || msg.includes("empty")) throw err;
+      throw new Error(`Could not read PDF: ${msg}`);
     }
-    return safeText(out);
   }
 
+  // --- DOCX ---
   if (
     type.includes("word") ||
     type.includes("officedocument") ||
     name.endsWith(".docx")
   ) {
-    const result = await mammoth.extractRawText({ buffer: buf });
-    return safeText(result.value || "");
+    try {
+      const result = await mammoth.extractRawText({ buffer: buf });
+      const extracted = safeText(result.value || "");
+      if (!extracted) throw new Error("The Word document appears to be empty.");
+      return extracted;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("empty")) throw err;
+      throw new Error(`Could not read DOCX: ${msg}`);
+    }
   }
 
-  if (type.startsWith("text/") || name.endsWith(".txt")) {
-    return safeText(buf.toString("utf8"));
+  // --- TXT ---
+  // Browsers sometimes send empty or generic content-type for .txt files,
+  // so we check the filename extension as the primary signal.
+  if (name.endsWith(".txt") || type.startsWith("text/") || type === "application/octet-stream") {
+    // Try UTF-8 first, fall back to latin1 for legacy documents
+    let decoded = buf.toString("utf8");
+    // Basic validation: if there are too many replacement chars, it's likely binary
+    if ((decoded.match(/\uFFFD/g) || []).length > 10) {
+      decoded = buf.toString("latin1");
+    }
+    const extracted = safeText(decoded);
+    if (!extracted) throw new Error("The text file appears to be empty.");
+    return extracted;
   }
 
-  throw new Error("Unsupported file type. Please upload PDF, DOCX, or TXT.");
+  throw new Error(`Unsupported file type "${file.type || name.split('.').pop()}". Please upload a PDF, DOCX, or TXT file.`);
 }
 
 function buildPrompt(documentText: string) {
@@ -153,6 +147,11 @@ ${documentText}`;
 function getFriendlyErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
 
+  // API key / authentication errors
+  if (message.includes("401") || message.includes("invalid_api_key") || message.includes("Authentication") || message.includes("Unauthorized")) {
+    return "API key authentication failed. Please check your GROQ_API_KEY configuration.";
+  }
+
   // API specific quota errors
   if (message.includes("429") || message.includes("Quota") || message.includes("rate_limit") || message.includes("Too Many Requests")) {
     return "The AI analysis quota has been reached. Please try again later.";
@@ -164,8 +163,13 @@ function getFriendlyErrorMessage(error: unknown): string {
   }
 
   // Connection/Server errors
-  if (message.includes("fetch failed") || message.includes("ECONNRESET")) {
+  if (message.includes("fetch failed") || message.includes("ECONNRESET") || message.includes("ENOTFOUND") || message.includes("network socket disconnected")) {
     return "There was a connection issue with the AI service. Please check your internet and try again.";
+  }
+
+  // Unexpected HTML response from upstream (groq returning an error page)
+  if (message.includes("<!DOCTYPE") || message.includes("Unexpected token")) {
+    return "The AI service returned an unexpected response. Please try again in a moment.";
   }
 
   // Default fallback
@@ -176,6 +180,9 @@ export async function POST(request: Request) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
     const userId: string | null = session?.user?.id ?? null;
+
+    // Suppress unused variable warning — userId reserved for future per-user logging/rate-limiting
+    void userId;
 
     const contentType = request.headers.get("content-type") || "";
     let text = "";
@@ -188,7 +195,7 @@ export async function POST(request: Request) {
         text = safeText(pasted);
       } else if (file instanceof File && file.size > 0) {
         if (file.size > 12 * 1024 * 1024) {
-          return Response.json(
+          return NextResponse.json(
             { error: "File too large (max 12MB)." },
             { status: 400 },
           );
@@ -202,20 +209,25 @@ export async function POST(request: Request) {
       if (body?.text) text = safeText(body.text);
     }
 
-    if (!text || text.length < 200) {
-      return Response.json(
-        {
-          error:
-            "Please provide more text (min ~200 characters) or upload a full document.",
-        },
+    if (!text) {
+      return NextResponse.json(
+        { error: "No text could be extracted. Please upload a PDF, DOCX, or TXT file with readable text." },
         { status: 400 },
       );
     }
 
-    const apiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY; // Fallback just in case
+    if (text.length < 200) {
+      return NextResponse.json(
+        { error: `The document is too short (${text.length} chars). Please provide at least ~200 characters of content.` },
+        { status: 400 },
+      );
+    }
+
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-      return Response.json(
-        { error: "Server missing API Key" },
+      console.error("GROQ_API_KEY is not set in environment variables.");
+      return NextResponse.json(
+        { error: "Server configuration error: API key missing. Please contact support." },
         { status: 500 },
       );
     }
@@ -231,11 +243,18 @@ export async function POST(request: Request) {
 
     const raw = chatCompletion.choices[0]?.message?.content?.trim() || "";
 
-    return Response.json({ text: raw });
+    if (!raw) {
+      return NextResponse.json(
+        { error: "The AI returned an empty response. Please try again." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ text: raw });
   } catch (e) {
     console.error("ANALYSIS ERROR:", e);
     const friendlyMessage = getFriendlyErrorMessage(e);
-    return Response.json({ error: friendlyMessage }, { status: 500 });
+    return NextResponse.json({ error: friendlyMessage }, { status: 500 });
   }
 }
 
