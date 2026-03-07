@@ -37,7 +37,7 @@ type Deadline = {
 type Summary = {
     score: number;
     executiveSummary: string;
-    highRiskIssues: any[];
+    highRiskIssues: { title: string; severity: string; reason: string; penalty?: string }[];
     recommendations: string[];
 };
 
@@ -64,6 +64,37 @@ export default function CompliancePage() {
     const [registrationDate, setRegistrationDate] = useState("");
 
     useEffect(() => {
+        async function fetchData() {
+            setLoading(true);
+            try {
+                const res = await fetch("/api/compliance/business");
+                const data = await res.json();
+                if (data.business) {
+                    setBusiness(data.business);
+                    const b = data.business;
+                    setName(b.name);
+                    setEntityType(b.entity_type);
+                    setCountry(b.country);
+                    setStateName(b.state);
+                    setIndustry(b.industry || "");
+                    setEmployeesCount(b.employees_count);
+                    setHasContractors(b.has_contractors);
+                    setCollectsPersonalData(b.collects_personal_data);
+                    setHasPhysicalPremises(b.has_physical_premises);
+                    setRegistrationDate(b.registration_date ? b.registration_date.split('T')[0] : "");
+
+                    await Promise.all([
+                        fetchDeadlines(data.business.id),
+                        fetchSummary()
+                    ]);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        }
+
         if (!isPending && !session?.user) {
             router.replace("/login");
             return;
@@ -73,37 +104,6 @@ export default function CompliancePage() {
             fetchData();
         }
     }, [session, isPending, router]);
-
-    async function fetchData() {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/compliance/business");
-            const data = await res.json();
-            if (data.business) {
-                setBusiness(data.business);
-                const b = data.business;
-                setName(b.name);
-                setEntityType(b.entity_type);
-                setCountry(b.country);
-                setStateName(b.state);
-                setIndustry(b.industry || "");
-                setEmployeesCount(b.employees_count);
-                setHasContractors(b.has_contractors);
-                setCollectsPersonalData(b.collects_personal_data);
-                setHasPhysicalPremises(b.has_physical_premises);
-                setRegistrationDate(b.registration_date ? b.registration_date.split('T')[0] : "");
-
-                await Promise.all([
-                    fetchDeadlines(data.business.id),
-                    fetchSummary()
-                ]);
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
-    }
 
     async function fetchSummary() {
         try {
@@ -368,7 +368,7 @@ export default function CompliancePage() {
                                         </div>
                                     </div>
                                     <p className="mt-4 text-stone-700 leading-relaxed italic border-l-4 border-stone-200 pl-4">
-                                        "{summary.executiveSummary}"
+                                        &quot;{summary.executiveSummary}&quot;
                                     </p>
 
                                     {summary.highRiskIssues.length > 0 && (

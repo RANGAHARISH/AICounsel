@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [method, setMethod] = useState<"password" | "otp">("password");
+  const [method] = useState<"password" | "otp">("password");
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,7 @@ export default function LoginPage() {
       }
       setOtpSent(true);
       setTimer(60);
-    } catch (e) {
+    } catch {
       setError("An unexpected error occurred.");
     } finally {
       setLoading(false);

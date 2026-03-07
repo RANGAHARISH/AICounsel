@@ -8,7 +8,6 @@ export async function POST(req: NextRequest) {
         console.log("[AUTH_TRACE] Starting OTP request...");
         const { email } = await req.json();
         console.log(`[AUTH_TRACE] Email: ${email}`);
-        const ip = req.headers.get("x-forwarded-for") || "unknown";
 
         if (!email) {
             return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -60,12 +59,13 @@ export async function POST(req: NextRequest) {
         console.log(`[AUTH_TRACE] Email result: ${JSON.stringify(emailResult)}`);
 
         return NextResponse.json({ message: "If an account exists with that email, an OTP has been sent." });
-    } catch (error: any) {
-        console.error("[AUTH_TRACE] OTP Request Error:", error.message || error);
-        if (error.stack) console.error(error.stack);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("[AUTH_TRACE] OTP Request Error:", err.message || err);
+        if (err instanceof Error && err.stack) console.error(err.stack);
         return NextResponse.json({
             error: "Failed to process request.",
-            debug: error.message || "Unknown error"
+            debug: err instanceof Error ? err.message : "Unknown error"
         }, { status: 500 });
     }
 }

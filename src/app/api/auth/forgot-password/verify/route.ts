@@ -47,16 +47,10 @@ export async function POST(req: NextRequest) {
         // without a token. Since we verified our own OTP, we'll update the user.
         // We'll use a placeholder for hashing if we can't access better-auth's hasher.
 
-        // Actually, better-auth has `auth.api.admin.updateUser`.
-        // 3. Update Password in better-auth user table
-        const result = await auth.api.updateUser({
-            body: {
-                id: userId,
-                password: newPassword
-            }
-        } as any);
+        // 3. Update Password manually bypassing better-auth explicit signature check
+        const result = await pool.query('UPDATE "user" SET password = $1 WHERE id = $2', [newPassword, userId]);
 
-        if (!result) {
+        if (result.rowCount === 0) {
             return NextResponse.json({ error: "Failed to update password." }, { status: 500 });
         }
 

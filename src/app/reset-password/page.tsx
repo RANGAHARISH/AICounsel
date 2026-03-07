@@ -52,7 +52,7 @@ function ResetPasswordForm() {
 
             setSuccessMessage("A new secure OTP has been sent to your email.");
             setResendCooldown(30); // 30 seconds cooldown
-        } catch (e) {
+        } catch {
             setError("Failed to resend. Please check your connection.");
         } finally {
             setResendLoading(false);
@@ -96,7 +96,7 @@ function ResetPasswordForm() {
             }
 
             router.push("/login?message=Password reset successful. Please log in.");
-        } catch (e) {
+        } catch {
             setError("An unexpected error occurred. Please check your connection.");
         } finally {
             setLoading(false);

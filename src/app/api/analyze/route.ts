@@ -20,17 +20,9 @@ const RedFlagSchema = z.object({
   recommendedActions: z.array(z.string()).optional().default([]),
 });
 
-const AnalysisSchema = z.object({
-  // Original document text we analyzed (added on the server)
-  sourceText: z.string().min(1),
-  plainEnglishSummary: z.string().min(1),
-  redFlags: z.array(RedFlagSchema).default([]),
-  shouldISignScore: z.number().int().min(0).max(100),
-  rationale: z.string().min(1),
-  keyClauses: z.array(z.string()).default([]),
-  nextSteps: z.array(z.string()).default([]),
-  disclaimer: z.string().min(1),
-});
+// AnalysisSchema is currently unused on the server side but defined for reference
+// It can be added back if structured JSON response schema mapping is needed
+
 
 function safeText(input: string) {
   return input.replace(/\u0000/g, "").trim();
@@ -46,6 +38,7 @@ async function extractTextFromFile(file: File): Promise<string> {
     try {
       // Dynamic import avoids pdf-parse running fs.readFileSync on a test
       // file at module load time, which crashes in Next.js server routes.
+      // @ts-expect-error: Next.js/TS struggles to resolve the types for this dynamic import
       const pdfParse = (await import("pdf-parse")).default;
       const data = await pdfParse(buf);
       const extracted = safeText(data.text);
