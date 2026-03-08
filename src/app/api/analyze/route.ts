@@ -30,38 +30,15 @@ async function extractTextFromFile(file: File): Promise<string> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pdfParseModule = await import("pdf-parse") as any;
 
-      let dataText = "";
+      // pdf-parse v1.1.1 usually exposes a default function or is the module itself
+      const pdfParseFn = typeof pdfParseModule === "function" ? pdfParseModule : pdfParseModule.default;
 
-      // The new pdf-parse (v2+) often exports a PDFParse class.
-      // We look for it in the module object or its .default property.
-      const PDFParseClass = pdfParseModule.PDFParse || pdfParseModule.default?.PDFParse;
-
-      if (PDFParseClass) {
-        const parser = new PDFParseClass({ data: buf });
-        const result = await parser.getText();
-        dataText = result.text;
-      } else {
-        // Fallback for older pdf-parse or different export structures
-        const pdfParseFn = typeof pdfParseModule.default === "function"
-          ? pdfParseModule.default
-          : (typeof pdfParseModule === "function" ? pdfParseModule : null);
-
-        if (!pdfParseFn) {
-          // One last check: maybe it's pdfParseModule.pdfParse
-          const altFn = pdfParseModule.pdfParse || pdfParseModule.default?.pdfParse;
-          if (typeof altFn === "function") {
-            const data = await altFn(buf);
-            dataText = data.text;
-          } else {
-            throw new Error(`PDF parser initialization failed. Module keys: ${Object.keys(pdfParseModule).join(", ")}`);
-          }
-        } else {
-          const data = await pdfParseFn(buf);
-          dataText = data.text;
-        }
+      if (typeof pdfParseFn !== "function") {
+        throw new Error("Cannot load PDF parser engine. pdf-parse export is not recognized.");
       }
 
-      const extracted = safeText(dataText);
+      const data = await pdfParseFn(buf);
+      const extracted = safeText(data.text || "");
       if (!extracted) throw new Error("PDF appears to be empty or image-only (scanned). Please use a text-based PDF.");
       return extracted;
     } catch (err) {
