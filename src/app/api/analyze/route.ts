@@ -1,4 +1,3 @@
-import Groq from "groq-sdk";
 // NOTE: pdf-parse is imported dynamically inside extractTextFromFile().
 // Top-level import causes a crash in Next.js because pdf-parse runs
 // fs.readFileSync() on a test PDF at module load time.
@@ -38,16 +37,36 @@ async function extractTextFromFile(file: File): Promise<string> {
     try {
       // Dynamic import avoids pdf-parse running fs.readFileSync on a test
       // file at module load time, which crashes in Next.js server routes.
-      // @ts-expect-error: Next.js/TS struggles to resolve the types for this dynamic import
-      const pdfParse = (await import("pdf-parse")).default;
-      const data = await pdfParse(buf);
-      const extracted = safeText(data.text);
+      const pdfParseModule = await import("pdf-parse");
+
+      let dataText = "";
+
+      // Handle modern pdf-parse v2 (which exports a PDFParse class)
+      if (pdfParseModule.PDFParse) {
+        const parser = new pdfParseModule.PDFParse({ data: buf });
+        const result = await parser.getText();
+        dataText = result.text;
+      } else {
+        // Fallback for older pdf-parse v1 (or transpiled ESM equivalents)
+        const pdfParseFn = typeof pdfParseModule.default === "function"
+          ? pdfParseModule.default
+          : pdfParseModule;
+
+        if (typeof pdfParseFn !== "function") {
+          throw new Error("Cannot load PDF parser engine. pdf-parse export is not recognized.");
+        }
+
+        const data = await pdfParseFn(buf);
+        dataText = data.text;
+      }
+
+      const extracted = safeText(dataText);
       if (!extracted) throw new Error("PDF appears to be empty or image-only (scanned). Please use a text-based PDF.");
       return extracted;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       // Re-throw our own descriptive messages directly
-      if (msg.includes("scanned") || msg.includes("empty")) throw err;
+      if (msg.includes("scanned") || msg.includes("empty") || msg.includes("PDF parser")) throw err;
       throw new Error(`Could not read PDF: ${msg}`);
     }
   }
@@ -170,6 +189,7 @@ function getFriendlyErrorMessage(error: unknown): string {
 }
 
 export async function POST(request: Request) {
+  console.log("Checking GROQ_API_KEY presence:", !!process.env.GROQ_API_KEY);
   try {
     const session = await auth.api.getSession({ headers: request.headers });
     const userId: string | null = session?.user?.id ?? null;
@@ -187,6 +207,7 @@ export async function POST(request: Request) {
       if (typeof pasted === "string" && pasted.trim()) {
         text = safeText(pasted);
       } else if (file instanceof File && file.size > 0) {
+        console.log("File uploaded:", { name: file.name, type: file.type, size: file.size });
         if (file.size > 12 * 1024 * 1024) {
           return NextResponse.json(
             { error: "File too large (max 12MB)." },
@@ -215,6 +236,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+    console.log("Extracted text length:", text.length);
 
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
@@ -225,16 +247,31 @@ export async function POST(request: Request) {
       );
     }
 
-    const prompt = buildPrompt(text.slice(0, 120_000));
-    const groq = new Groq({ apiKey });
+    const prompt = buildPrompt(text.slice(0, 100_000)); // limit length
 
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.2,
+    console.log("Sending request to Groq API...");
+    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2,
+      })
     });
 
-    const raw = chatCompletion.choices[0]?.message?.content?.trim() || "";
+    if (!groqResponse.ok) {
+      const errorText = await groqResponse.text();
+      console.error("Groq API returned an error:", groqResponse.status, errorText);
+      throw new Error(`Groq API Error: ${groqResponse.status} ${errorText}`);
+    }
+
+    const chatCompletion = await groqResponse.json();
+    const raw = chatCompletion.choices?.[0]?.message?.content?.trim() || "";
+    console.log("Groq API response received successfully.");
 
     if (!raw) {
       return NextResponse.json(
@@ -247,7 +284,14 @@ export async function POST(request: Request) {
   } catch (e) {
     console.error("ANALYSIS ERROR:", e);
     const friendlyMessage = getFriendlyErrorMessage(e);
-    return NextResponse.json({ error: friendlyMessage }, { status: 500 });
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    return NextResponse.json(
+      {
+        error: friendlyMessage,
+        details: errorMessage
+      },
+      { status: 500 }
+    );
   }
 }
 

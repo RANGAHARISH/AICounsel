@@ -24,7 +24,7 @@ export default function AnalyzePage() {
     return text.trim().length >= 200;
   }, [mode, file, text]);
 
-  async function safeJson(res: Response): Promise<{ text: string } | { error: string; raw?: string }> {
+  async function safeJson(res: Response): Promise<{ text: string } | { error: string; details?: string; raw?: string }> {
     const contentType = res.headers.get("content-type") ?? "";
     if (!contentType.includes("application/json")) {
       // Server returned HTML (e.g. Next.js error page) — read as text for debugging
@@ -33,7 +33,7 @@ export default function AnalyzePage() {
       return { error: "The server returned an unexpected response. Please try again." };
     }
     try {
-      return await res.json() as { text: string } | { error: string; raw?: string };
+      return await res.json() as { text: string } | { error: string; details?: string; raw?: string };
     } catch (parseErr) {
       console.error("JSON parse error:", parseErr);
       return { error: "Failed to parse server response. Please try again." };
@@ -58,7 +58,8 @@ export default function AnalyzePage() {
 
       if (!res.ok) {
         const errorMsg = "error" in json ? json.error : "Request failed";
-        console.error("Analysis Request Failed:", errorMsg, json);
+        const errorDetails = "details" in json ? json.details : undefined;
+        console.error("Analysis Request Failed:", errorMsg, errorDetails ? `Details: ${errorDetails}` : json);
         setError(errorMsg);
         return;
       }
