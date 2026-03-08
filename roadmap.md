@@ -4,7 +4,7 @@
 
 | Variable | Purpose |
 |----------|---------|
-| `GEMINI_API_KEY` | Gemini API for legal document analysis |
+| `GROQ_API_KEY` | Groq API for legal document analysis |
 | `DATABASE_URL` | Neon PostgreSQL connection string (auth, users, sessions, admin) |
 | `BETTER_AUTH_SECRET` | 32+ char secret for auth cookies (generate: `openssl rand -base64 32`) |
 | `BETTER_AUTH_URL` | Site base URL for OAuth callbacks (e.g. `http://localhost:3000` in dev) |
