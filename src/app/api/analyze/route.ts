@@ -18,6 +18,7 @@ async function extractTextFromFile(file: File): Promise<string> {
   const buf = Buffer.from(await file.arrayBuffer());
   const name = (file.name || "").toLowerCase().trim();
   const type = (file.type || "").toLowerCase().trim();
+  console.log("EXTRACT START:", { name, type, bufLen: buf.length });
 
   // --- PDF ---
   if (type.includes("pdf") || name.endsWith(".pdf")) {
@@ -182,6 +183,16 @@ function getFriendlyErrorMessage(error: unknown): string {
   // Unexpected HTML response from upstream (groq returning an error page)
   if (message.includes("<!DOCTYPE") || message.includes("Unexpected token")) {
     return "The AI service returned an unexpected response. Please try again in a moment.";
+  }
+
+  // PDF specific extraction errors or Word errors
+  if (message.includes("Could not read PDF") || message.includes("Could not read DOCX") || message.includes("scanned") || message.includes("empty") || message.includes("parser initialization")) {
+    return message;
+  }
+
+  // File size errors
+  if (message.includes("File too large")) {
+    return message;
   }
 
   // Default fallback
