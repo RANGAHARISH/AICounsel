@@ -31,23 +31,33 @@ async function extractTextFromFile(file: File): Promise<string> {
 
       let dataText = "";
 
-      // Handle modern pdf-parse v2 (which exports a PDFParse class)
-      if (pdfParseModule.PDFParse) {
-        const parser = new pdfParseModule.PDFParse({ data: buf });
+      // The new pdf-parse (v2+) often exports a PDFParse class.
+      // We look for it in the module object or its .default property.
+      const PDFParseClass = pdfParseModule.PDFParse || pdfParseModule.default?.PDFParse;
+
+      if (PDFParseClass) {
+        const parser = new PDFParseClass({ data: buf });
         const result = await parser.getText();
         dataText = result.text;
       } else {
-        // Fallback for older pdf-parse v1 (or transpiled ESM equivalents)
+        // Fallback for older pdf-parse or different export structures
         const pdfParseFn = typeof pdfParseModule.default === "function"
           ? pdfParseModule.default
-          : pdfParseModule;
+          : (typeof pdfParseModule === "function" ? pdfParseModule : null);
 
-        if (typeof pdfParseFn !== "function") {
-          throw new Error("Cannot load PDF parser engine. pdf-parse export is not recognized.");
+        if (!pdfParseFn) {
+          // One last check: maybe it's pdfParseModule.pdfParse
+          const altFn = pdfParseModule.pdfParse || pdfParseModule.default?.pdfParse;
+          if (typeof altFn === "function") {
+            const data = await altFn(buf);
+            dataText = data.text;
+          } else {
+            throw new Error(`PDF parser initialization failed. Module keys: ${Object.keys(pdfParseModule).join(", ")}`);
+          }
+        } else {
+          const data = await pdfParseFn(buf);
+          dataText = data.text;
         }
-
-        const data = await pdfParseFn(buf);
-        dataText = data.text;
       }
 
       const extracted = safeText(dataText);
