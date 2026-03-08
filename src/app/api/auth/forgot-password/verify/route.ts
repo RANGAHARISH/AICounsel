@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { verifyOTP } from "@/lib/otp";
-import { auth } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
     try {

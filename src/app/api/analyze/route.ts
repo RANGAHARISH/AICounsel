@@ -1,23 +1,10 @@
 // NOTE: pdf-parse is imported dynamically inside extractTextFromFile().
 // Top-level import causes a crash in Next.js because pdf-parse runs
 // fs.readFileSync() on a test PDF at module load time.
-import { z } from "zod";
 import mammoth from "mammoth";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-
-
-const RedFlagSchema = z.object({
-  title: z.string().min(1),
-  severity: z.enum(["low", "medium", "high"]),
-  whyItMatters: z.string().min(1),
-  suggestedEdit: z.string().optional().default(""),
-  clauseExcerpt: z.string().optional().default(""),
-  clauseLabel: z.string().optional().default(""),
-  category: z.string().optional().default(""),
-  recommendedActions: z.array(z.string()).optional().default([]),
-});
 
 // AnalysisSchema is currently unused on the server side but defined for reference
 // It can be added back if structured JSON response schema mapping is needed
@@ -37,7 +24,10 @@ async function extractTextFromFile(file: File): Promise<string> {
     try {
       // Dynamic import avoids pdf-parse running fs.readFileSync on a test
       // file at module load time, which crashes in Next.js server routes.
-      const pdfParseModule = await import("pdf-parse");
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfParseModule = await import("pdf-parse") as any;
 
       let dataText = "";
 
