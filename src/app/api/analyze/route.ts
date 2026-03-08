@@ -9,9 +9,42 @@ import { NextResponse } from "next/server";
 // AnalysisSchema is currently unused on the server side but defined for reference
 // It can be added back if structured JSON response schema mapping is needed
 
+import crypto from "crypto";
+
+interface AnalysisResult {
+  document_type: string;
+  country: string;
+  key_clauses: { clause_name: string; description: string }[];
+  obligations: string[];
+  risks: { risk_name: string; severity: "low" | "medium" | "high"; explanation: string }[];
+  missing_protections: string[];
+  summary: string;
+}
 
 function safeText(input: string) {
   return input.replace(/\u0000/g, "").trim();
+}
+
+/**
+ * Normalizes text to ensure consistency between different file formats.
+ * Removes extra whitespace, standardizes punctuation, and strips artifacts.
+ */
+function normalizeText(text: string): string {
+  return text
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\n{3,}/g, "\n\n") // Collapse triple+ newlines
+    .replace(/[ \t]+/g, " ")      // Collapse multiple spaces/tabs
+    .replace(/[“”]/g, '"')       // Standardize quotes
+    .replace(/[‘’]/g, "'")
+    .trim();
+}
+
+/**
+ * Generates a SHA-256 hash of the normalized text.
+ */
+function generateHash(text: string): string {
+  return crypto.createHash("sha256").update(text).digest("hex");
 }
 
 async function extractTextFromFile(file: File): Promise<string> {
@@ -82,57 +115,53 @@ async function extractTextFromFile(file: File): Promise<string> {
     return extracted;
   }
 
-  throw new Error(`Unsupported file type "${file.type || name.split('.').pop()}". Please upload a PDF, DOCX, or TXT file.`);
+  throw new Error(`Unsupported file type. Please upload a PDF, DOCX, or TXT file.`);
 }
 
-function buildPrompt(documentText: string) {
-  return `You are a Contract Review and Explanation System designed to help non-lawyers understand legal documents in simple, clear, human language. Your output must look like a refined, professional human-written contract analysis, not an AI output. It must be extremely simple and concise.
+/**
+ * Main parser entry point that returns normalized text.
+ */
+async function parseDocument(file: File): Promise<{ text: string; hash: string }> {
+  const rawText = await extractTextFromFile(file);
+  const normalized = normalizeText(rawText);
+  const hash = generateHash(normalized);
+  return { text: normalized, hash };
+}
 
-CRITICAL RULES FOR FORMATTING - YOU MUST OBEY THESE:
-1. Do NOT use ANY bullet points. No asterisks (*), no hyphens (-), no bullet dots (•). NEVER use list markers.
-2. Do NOT use hashtags (#), code fences, heavy emojis, or decorative symbols. You MAY use markdown bolding (**) for headers and emphasis only.
-3. Write ONLY in short sentences and concise paragraphs.
-4. Use clean section headings in bold (for example: **Document Review Summary**).
-5. Explain everything in the simplest possible English.
+function buildPrompt(documentText: string, country: string) {
+  return `You are a professional legal analyst specializing in the jurisdiction of ${country}.
 
-Your Output Structure (Must Follow Exactly):
+Analyze the following legal document strictly according to the laws and legal framework of ${country}.
 
-**Document Review Summary**
-Should I Sign? Score: (0–100)
-Immediate recommendation: (Yes / No / Fix Before Signing)
-Reason: (One-sentence explanation of the score)
+Your goal is to provide a structured, accurate, and deterministic legal analysis.
 
-**High-Risk Issues**
-1. Issue Name (Risk Level): Explain what the clause means and why it is risky in a couple of short sentences.
-(Do not use bullet points or asterisks. Number each issue.)
+Return your analysis strictly as a JSON object following this schema:
+{
+  "document_type": "string",
+  "country": "string",
+  "key_clauses": [
+    { "clause_name": "string", "description": "string" }
+  ],
+  "obligations": ["string"],
+  "risks": [
+    { "risk_name": "string", "severity": "low|medium|high", "explanation": "string" }
+  ],
+  "missing_protections": ["string"],
+  "summary": "string"
+}
 
-**Medium-Risk Issues**
-1. Issue Name (Risk Level): Short explanation for each. Give concise, plain text descriptions.
+Rules:
+1. Do not include any text before or after the JSON object.
+2. Use plain, professional English.
+3. Be concise and accurate.
+4. If a field is not applicable, use an empty array or empty string.
 
-**Low-Risk Issues**
-1. Issue Name (Risk Level): Short explanation for each.
-
-**Plain English Summary**
-Write a simple explanation of the entire agreement in easy English paragraph form, maximum 4 lines.
-
-**Action Items Before Signing**
-Number each item (e.g., 1., 2., 3.). List the key fixes, clarifications or negotiations required in plain text sentences. DO NOT use bullet points.
-
-**Clause-by-Clause Analysis**
-Format the name of each clause in bold. Then, write a very short, concise sentence explaining its Meaning. Then write its Risk Level. Finally, explicitly state if there is Missing Information. 
-Example format:
-**1. Demise, Term, and Rent Payment**
-Meaning: The lessor grants the lease specifies duration, start date, and rent amount.
-Risk Level: Medium.
-Missing Information: Exact location, duration in years, and specific rent amount.
-
-Style Requirements:  
-Absolutely NO bullet points or asterisks (*). Plain English only. Neutral, factual, concise. Emphasize missing fields clearly by writing [Missing Information]. Avoid sounding like an AI.
-
-Now analyze the uploaded legal document accordingly, keeping it extremely brief.
-
+Document Content:
 ${documentText}`;
 }
+
+// Simple in-memory cache for analysis results
+const analysisCache = new Map<string, AnalysisResult>();
 
 function getFriendlyErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
@@ -187,13 +216,22 @@ export async function POST(request: Request) {
 
     const contentType = request.headers.get("content-type") || "";
     let text = "";
+    let country = "United States"; // Default
+    let docHash = "";
 
     if (contentType.includes("multipart/form-data")) {
       const form = await request.formData();
       const file = form.get("file");
       const pasted = form.get("text");
+      const countryInput = form.get("country");
+
+      if (typeof countryInput === "string" && countryInput.trim()) {
+        country = countryInput.trim();
+      }
+
       if (typeof pasted === "string" && pasted.trim()) {
-        text = safeText(pasted);
+        text = normalizeText(pasted);
+        docHash = generateHash(text);
       } else if (file instanceof File && file.size > 0) {
         console.log("File uploaded:", { name: file.name, type: file.type, size: file.size });
         if (file.size > 12 * 1024 * 1024) {
@@ -202,13 +240,20 @@ export async function POST(request: Request) {
             { status: 400 },
           );
         }
-        text = await extractTextFromFile(file);
+        const { text: extractedText, hash } = await parseDocument(file);
+        text = extractedText;
+        docHash = hash;
       }
     } else if (contentType.includes("application/json")) {
       const body = (await request.json().catch(() => ({}))) as {
         text?: string;
+        country?: string;
       };
-      if (body?.text) text = safeText(body.text);
+      if (body?.country) country = body.country;
+      if (body?.text) {
+        text = normalizeText(body.text);
+        docHash = generateHash(text);
+      }
     }
 
     if (!text) {
@@ -218,13 +263,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check Cache
+    const cacheKey = `${docHash}_${country}`;
+    if (analysisCache.has(cacheKey)) {
+      console.log("Returning cached analysis for hash:", docHash);
+      return NextResponse.json(analysisCache.get(cacheKey));
+    }
+
     if (text.length < 200) {
       return NextResponse.json(
         { error: `The document is too short (${text.length} chars). Please provide at least ~200 characters of content.` },
         { status: 400 },
       );
     }
-    console.log("Extracted text length:", text.length);
+    console.log("Extracted text length:", text.length, "Hash:", docHash, "Jurisdiction:", country);
 
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
@@ -235,9 +287,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const prompt = buildPrompt(text.slice(0, 100_000)); // limit length
+    const prompt = buildPrompt(text.slice(0, 100_000), country);
 
-    console.log("Sending request to Groq API...");
+    console.log("Sending request to Groq API (Deterministic Mode)...");
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -247,7 +299,9 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.2,
+        temperature: 0,
+        top_p: 1,
+        response_format: { type: "json_object" }
       })
     });
 
@@ -258,17 +312,24 @@ export async function POST(request: Request) {
     }
 
     const chatCompletion = await groqResponse.json();
-    const raw = chatCompletion.choices?.[0]?.message?.content?.trim() || "";
+    const content = chatCompletion.choices?.[0]?.message?.content?.trim() || "";
     console.log("Groq API response received successfully.");
 
-    if (!raw) {
-      return NextResponse.json(
-        { error: "The AI returned an empty response. Please try again." },
-        { status: 500 },
-      );
+    if (!content) {
+      throw new Error("The AI returned an empty response.");
     }
 
-    return NextResponse.json({ text: raw });
+    // Parse and cache
+    let finalResult: AnalysisResult;
+    try {
+      finalResult = JSON.parse(content);
+      analysisCache.set(cacheKey, finalResult);
+    } catch (parseErr) {
+      console.error("Failed to parse AI JSON response:", content);
+      throw new Error("AI returned invalid JSON formatting. Please try again.");
+    }
+
+    return NextResponse.json(finalResult);
   } catch (e) {
     console.error("ANALYSIS ERROR:", e);
     const friendlyMessage = getFriendlyErrorMessage(e);
