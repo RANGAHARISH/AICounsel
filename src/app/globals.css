@@ -1,22 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap');
+
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
-  --muted: #57534e;
-  --accent: #0f766e;
-  --accent-hover: #0d5c56;
+  --background: #ffffff;
+  --foreground: #171e19;
+  --charcoal: #171e19;
+  --dark-gray: #272727;
+  --sage: #b7c6c2;
+  --golden: #ffe17c;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-serif: var(--font-serif);
+  --color-charcoal: var(--charcoal);
+  --color-dark-gray: var(--dark-gray);
+  --color-sage: var(--sage);
+  --color-golden: var(--golden);
+  
+  --font-anton: "Anton", sans-serif;
+  --font-satoshi: "Satoshi", sans-serif;
+  
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@utility bg-grid {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, #b7c6c220 1px, transparent 1px),
+    linear-gradient(to bottom, #b7c6c220 1px, transparent 1px);
+}
+
+@utility highlight-rotated {
+  position: relative;
+  z-index: 1;
+  &::after {
+    content: "";
+    position: absolute;
+    left: -0.1em;
+    right: -0.1em;
+    top: 50%;
+    height: 0.6em;
+    background: var(--golden);
+    z-index: -1;
+    transform: translateY(-50%) rotate(-1deg);
+    opacity: 0.8;
+  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-satoshi), system-ui, sans-serif;
+}
+
+.font-anton {
+  font-family: var(--font-anton);
 }
