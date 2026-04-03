@@ -2,16 +2,21 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { Suspense } from "react";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") ?? "/analyze";
+
   const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
-    if (!isPending && session?.user) router.replace("/");
-  }, [session, isPending, router]);
+    if (!isPending && session?.user) router.replace(redirect);
+  }, [session, isPending, router, redirect]);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,31 +28,24 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
     try {
-      const { data, error: err } = await authClient.signUp.email({
-        name,
-        email,
-        password,
-      });
+      const { data, error: err } = await authClient.signUp.email({ name, email, password });
       if (err) {
         if (err.code === "USER_ALREADY_EXISTS") {
-          setError("An account with this email already exists.");
-        } else if (err.message?.toLowerCase().includes("origin")) {
-          setError("Session failed due to an origin mismatch. Please check your browser settings or use localhost.");
+          setError("An account with this email already exists. Please log in.");
         } else {
-          setError(err.message ?? "Sign up failed");
+          setError(err.message ?? "Sign up failed. Please try again.");
         }
         return;
       }
       if (data) {
-        router.push("/");
+        router.push(redirect);
         router.refresh();
       }
     } catch (e) {
-      console.error("Signup exception:", e);
       if (e instanceof TypeError && e.message.includes("fetch")) {
-        setError("Network error: Failed to connect to the server. Please check if the backend is running.");
+        setError("Network error. Please check your connection and try again.");
       } else {
-        setError(e instanceof Error ? e.message : "An unexpected error occurred. Please check your connection.");
+        setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -56,32 +54,47 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <header className="border-b border-stone-200/80 bg-white/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="font-serif text-xl font-semibold text-stone-900">
-            AICounsel
+      {/* Header */}
+      <header className="border-b-4 border-charcoal bg-white sticky top-0 z-50">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <Link href="/" className="font-anton text-2xl uppercase tracking-tighter text-charcoal flex items-baseline">
+            AICOUNSEL<span className="text-golden">.</span>
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-stone-600 transition hover:text-stone-900">
-              Log in
+          <nav className="flex items-center gap-6">
+            <Link
+              href={`/login${redirect !== "/analyze" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
+              className="font-satoshi text-xs font-black uppercase tracking-widest text-charcoal/50 hover:text-charcoal transition-colors"
+            >
+              Log In
             </Link>
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-md px-6 pt-16">
-        <h1 className="font-serif text-2xl font-semibold text-stone-900">Create an account</h1>
-        <p className="mt-2 text-stone-600">Get started with contract analysis in plain English.</p>
+      <main className="mx-auto max-w-md px-6 pt-20 pb-16">
+        {/* Title */}
+        <div className="text-center mb-10">
+          <span className="font-satoshi text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/40 mb-3 block">
+            Create Your Account
+          </span>
+          <h1 className="font-anton text-5xl uppercase text-charcoal leading-none">Sign Up</h1>
+          <p className="mt-3 font-satoshi text-charcoal/60 text-sm">
+            Join AICounsel and start understanding your contracts.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6 bg-white border-2 border-charcoal/10 p-8 rounded-2xl shadow-xl">
           {error && (
-            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-xs font-bold text-red-600 uppercase tracking-widest">
               {error}
             </div>
           )}
+
+          {/* Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-stone-700">
-              Name
+            <label htmlFor="name" className="block font-satoshi text-[10px] font-black uppercase tracking-[0.2em] text-charcoal/50 mb-2">
+              Full Name
             </label>
             <input
               id="name"
@@ -90,12 +103,14 @@ export default function SignupPage() {
               autoComplete="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-2 block w-full rounded-lg border border-stone-300 px-4 py-2.5 text-stone-900 placeholder-stone-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-              placeholder="Your name"
+              className="w-full bg-charcoal/5 rounded-xl border-none px-4 py-3 font-satoshi text-sm focus:ring-2 focus:ring-golden outline-none transition-all"
+              placeholder="Your full name"
             />
           </div>
+
+          {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-stone-700">
+            <label htmlFor="email" className="block font-satoshi text-[10px] font-black uppercase tracking-[0.2em] text-charcoal/50 mb-2">
               Email
             </label>
             <input
@@ -105,12 +120,14 @@ export default function SignupPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-2 block w-full rounded-lg border border-stone-300 px-4 py-2.5 text-stone-900 placeholder-stone-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              className="w-full bg-charcoal/5 rounded-xl border-none px-4 py-3 font-satoshi text-sm focus:ring-2 focus:ring-golden outline-none transition-all"
               placeholder="you@example.com"
             />
           </div>
+
+          {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-stone-700">
+            <label htmlFor="password" className="block font-satoshi text-[10px] font-black uppercase tracking-[0.2em] text-charcoal/50 mb-2">
               Password
             </label>
             <input
@@ -121,26 +138,40 @@ export default function SignupPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-2 block w-full rounded-lg border border-stone-300 px-4 py-2.5 text-stone-900 placeholder-stone-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-              placeholder="At least 8 characters"
+              className="w-full bg-charcoal/5 rounded-xl border-none px-4 py-3 font-satoshi text-sm focus:ring-2 focus:ring-golden outline-none transition-all"
+              placeholder="Min. 8 characters"
             />
           </div>
+
+          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-[var(--accent)] px-4 py-3 font-medium text-white transition hover:bg-[var(--accent-hover)] disabled:opacity-50"
+            className="w-full bg-golden text-charcoal font-anton text-2xl px-10 py-4 rounded-2xl hover:scale-[1.02] hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50 shadow-xl mt-2"
           >
-            {loading ? "Creating account…" : "Create account"}
+            {loading ? "SIGNING UP…" : "SIGN UP"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-stone-600">
+        {/* Switch to Login */}
+        <p className="mt-8 text-center font-satoshi text-sm text-charcoal/50">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-[var(--accent)] hover:underline">
-            Log in
+          <Link
+            href={`/login${redirect !== "/analyze" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
+            className="font-black text-charcoal hover:text-golden transition-colors uppercase tracking-widest text-xs"
+          >
+            Log In
           </Link>
         </p>
       </main>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }

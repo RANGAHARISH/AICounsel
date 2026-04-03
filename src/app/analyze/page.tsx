@@ -99,101 +99,113 @@ export default function AnalyzePage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <header className="border-b border-stone-200/80 bg-white/80 backdrop-blur-sm">
+      <header className="border-b-4 border-charcoal bg-white sticky top-0 z-50 brutal-shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="font-serif text-xl font-semibold text-stone-900">
-            AICounsel
+          <Link href="/" className="font-anton text-2xl uppercase tracking-tighter text-charcoal flex items-baseline">
+            AICOUNSEL<span className="text-[var(--accent)]">.</span>
           </Link>
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center gap-8">
             <Link
               href="/compliance"
-              className="text-sm font-medium text-stone-600 transition hover:text-stone-900"
+              className="font-satoshi text-xs font-bold uppercase tracking-widest text-charcoal/60 hover:text-charcoal transition-colors"
             >
-              Compliance Manager
+              Compliance
             </Link>
-            <div className="text-sm font-medium text-stone-900 border-b-2 border-stone-900">
-              Document Analysis
+            <div className="font-satoshi text-xs font-black uppercase tracking-widest text-charcoal border-b-4 border-charcoal pb-1">
+              Analysis
             </div>
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <div className="flex flex-col gap-10 lg:flex-row">
-          <section className="lg:w-[420px]">
-            <h1 className="font-serif text-2xl font-semibold text-stone-900">
-              Analyze a legal document
-            </h1>
-            <p className="mt-2 text-stone-600">
-              Select your jurisdiction and upload a document to get automated legal insights.
-            </p>
-
-            {/* Country Selector */}
-            <div className="mt-8 rounded-xl border border-stone-200 bg-white p-5">
-              <label className="block text-sm font-medium text-stone-700">
-                Select Jurisdiction (Country)
-              </label>
-              <select
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="mt-2 block w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-              >
-                {countries.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              <p className="mt-2 text-xs text-stone-500">Legal analysis will be tailored to this country&apos;s laws.</p>
+      <main className="mx-auto max-w-7xl px-6 py-16">
+        <div className="flex flex-col gap-12 lg:flex-row">
+          <section className="lg:w-[450px] space-y-8">
+            <div>
+              <h1 className="font-anton text-4xl md:text-5xl uppercase leading-none mb-4">
+                Operational <span className="text-[var(--accent)]">Intelligence</span>
+              </h1>
+              <p className="font-satoshi text-lg text-charcoal/60 leading-relaxed">
+                Upload your contracts for deterministic, jurisdiction-aware risk analysis.
+              </p>
             </div>
 
-            <div className="mt-6 flex gap-2 rounded-lg border border-stone-200 bg-white p-1">
+            {/* Jurisdiction Select */}
+            <div className="bg-white border-4 border-charcoal p-6 brutal-shadow">
+              <label className="block font-satoshi text-[10px] font-black uppercase tracking-[0.2em] text-charcoal mb-3">
+                Target Jurisdiction
+              </label>
+              <div className="relative group/select">
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full bg-sage/10 border-2 border-charcoal px-4 py-3 font-satoshi text-sm focus:ring-0 focus:bg-white outline-none appearance-none cursor-pointer brutal-shadow-sm font-bold"
+                >
+                  {countries.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 bottom-3.5 pointer-events-none text-charcoal group-hover/select:text-golden transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                </div>
+              </div>
+            </div>
+
+
+            <div className="flex gap-2 p-1 bg-charcoal">
               <button
                 type="button"
                 onClick={() => setMode("file")}
-                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${mode === "file" ? "bg-stone-900 text-white" : "text-stone-700 hover:bg-stone-50"
+                className={`flex-1 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${mode === "file" ? "bg-golden text-charcoal border-2 border-charcoal brutal-shadow-sm" : "text-white/40 hover:text-white"
                   }`}
               >
-                Upload file
+                Upload Document
               </button>
               <button
                 type="button"
                 onClick={() => setMode("paste")}
-                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${mode === "paste" ? "bg-stone-900 text-white" : "text-stone-700 hover:bg-stone-50"
+                className={`flex-1 px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${mode === "paste" ? "bg-golden text-charcoal border-2 border-charcoal brutal-shadow-sm" : "text-white/40 hover:text-white"
                   }`}
               >
-                Paste text
+                Paste Direct
               </button>
             </div>
 
             {mode === "file" ? (
-              <div className="mt-5 rounded-xl border border-stone-200 bg-white p-5">
-                <label className="block text-sm font-medium text-stone-700">
-                  Contract file
-                </label>
+              <div className="group relative border-4 border-dashed border-charcoal bg-sage/5 p-8 text-center hover:border-[var(--accent)] hover:bg-sage/10 transition-all brutal-shadow">
                 <input
                   type="file"
-                  accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                  accept=".pdf,.docx,.txt"
                   onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  className="mt-2 block w-full text-sm text-stone-700 file:mr-4 file:rounded-md file:border-0 file:bg-stone-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-stone-800 hover:file:bg-stone-200"
+                  className="absolute inset-0 opacity-0 cursor-pointer"
                 />
-                <p className="mt-2 text-xs text-stone-500">Max 12MB. PDF, DOCX, TXT supported.</p>
+                <div className="space-y-2">
+                  <div className="mx-auto w-12 h-12 bg-charcoal text-golden flex items-center justify-center mb-4 border-2 border-charcoal brutal-shadow-sm">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  </div>
+                  <p className="font-satoshi text-sm font-black text-charcoal uppercase tracking-widest">
+                    {file ? file.name : "Select Legal Document"}
+                  </p>
+                  <p className="font-satoshi text-xs text-charcoal/60 font-bold">PDF, DOCX, TXT UP TO 12MB</p>
+                </div>
               </div>
             ) : (
-              <div className="mt-5 rounded-xl border border-stone-200 bg-white p-5">
-                <label className="block text-sm font-medium text-stone-700">
-                  Paste text
+              <div className="border-4 border-charcoal bg-white p-6 brutal-shadow">
+                <label className="block font-satoshi text-[10px] font-black uppercase tracking-[0.2em] text-charcoal mb-3">
+                  Text Input
                 </label>
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  rows={10}
-                  className="mt-2 w-full rounded-lg border border-stone-300 px-4 py-3 text-sm text-stone-900 placeholder-stone-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                  placeholder="Paste the contract text here (minimum ~200 characters)..."
+                  rows={8}
+                  className="w-full bg-sage/10 border-2 border-charcoal px-4 py-3 font-satoshi text-sm focus:bg-white outline-none resize-none brutal-shadow-sm font-bold"
+                  placeholder="Paste clause matter here..."
                 />
               </div>
             )}
 
             {error && (
-              <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-xs font-bold text-red-600 uppercase tracking-widest">
                 {error}
               </div>
             )}
@@ -202,111 +214,126 @@ export default function AnalyzePage() {
               type="button"
               onClick={onAnalyze}
               disabled={!canSubmit || loading}
-              className="mt-5 w-full rounded-lg bg-[var(--accent)] px-4 py-3 font-medium text-white transition hover:bg-[var(--accent-hover)] disabled:opacity-50"
+              className="w-full bg-golden text-charcoal font-anton text-2xl px-10 py-5 transition-all outline-none border-4 border-charcoal brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-x-2 active:translate-y-2 active:shadow-none disabled:opacity-50 disabled:grayscale disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[8px_8px_0px_0px_var(--charcoal)]"
             >
-              {loading ? "Analyzing Jurisdictional Laws…" : "Analyze"}
+              {loading ? "INITIALIZING SEMANTIC ENGINE…" : "ANALYZE DOCUMENT"}
             </button>
           </section>
 
           <section className="flex-1">
             {!analysis ? (
-              <div className="rounded-2xl border border-stone-200 bg-white p-8">
-                <h2 className="font-serif text-lg font-semibold text-stone-900">
-                  Results
+              <div className="border-4 border-charcoal bg-white p-12 h-full flex flex-col items-center justify-center text-center brutal-shadow relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-sage/20 rounded-bl-full pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-golden/20 rounded-tr-full pointer-events-none"></div>
+                <div className="w-20 h-20 bg-charcoal text-white flex items-center justify-center mb-8 rotate-12 border-4 border-white brutal-shadow">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white transition-transform group-hover:rotate-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </div>
+                <h2 className="font-anton text-3xl uppercase mb-4 text-charcoal">
+                  Awaiting Input
                 </h2>
-                <p className="mt-2 text-stone-600 leading-relaxed">
-                  Upload or paste a document to see the jurisdictional analysis. Our AI will identify key clauses, risks, and missing protections based on the selected country&apos;s laws.
+                <p className="font-satoshi text-charcoal/60 text-lg max-w-sm font-bold">
+                  Upload a document to trigger the AI analysis protocol.
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="rounded-2xl border border-stone-200 bg-white p-8">
-                  <div className="flex items-center justify-between mb-6 border-b border-stone-100 pb-4">
-                    <h2 className="font-serif text-2xl font-bold text-stone-900">
-                      Analysis Report
-                    </h2>
-                    <span className="px-3 py-1 rounded-full bg-stone-100 text-xs font-bold text-stone-600 uppercase tracking-widest">
-                      {analysis.country} Jurisdiction
-                    </span>
-                  </div>
+              <div className="space-y-8 animate-fade-in mb-8">
+                <div className="border-4 border-charcoal bg-white p-10 brutal-shadow relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-4 bg-golden border-b-4 border-charcoal"></div>
 
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="p-4 rounded-xl bg-stone-50 border border-stone-100">
-                      <h3 className="text-xs font-bold text-stone-400 uppercase mb-1">Document Type</h3>
-                      <p className="text-stone-900 font-medium">{analysis.document_type || "Unknown Legal Document"}</p>
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12 border-b border-charcoal/5 pb-8">
+                    <div>
+                      <span className="font-satoshi text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/40 mb-2 block">Intelligence Report</span>
+                      <h2 className="font-anton text-5xl uppercase leading-none">
+                        {analysis.document_type || "Legal Document"}
+                      </h2>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="px-4 py-2 bg-golden text-charcoal text-[10px] font-black uppercase tracking-widest border-2 border-charcoal brutal-shadow-sm">
+                        {analysis.country} Jurisdiction
+                      </span>
                     </div>
                   </div>
 
-                  <div className="mt-8">
-                    <h3 className="font-serif text-lg font-semibold text-stone-900 mb-4">Summary</h3>
-                    <p className="text-stone-700 leading-relaxed italic">{analysis.summary}</p>
-                  </div>
+                  <div className="space-y-12">
+                    <div>
+                      <h3 className="font-anton text-2xl uppercase mb-6 flex items-center gap-4 text-charcoal">
+                        <span className="flex-1 h-1 bg-charcoal"></span>
+                        Summary
+                        <span className="flex-1 h-1 bg-charcoal"></span>
+                      </h3>
+                      <p className="font-satoshi text-xl text-charcoal font-bold leading-relaxed border-l-8 border-golden pl-8 py-2 bg-sage/5 pr-4 border-r-2 border-y-2 border-r-transparent border-y-transparent">
+                        {analysis.summary}
+                      </p>
+                    </div>
 
-                  <div className="mt-10">
-                    <h3 className="font-serif text-lg font-semibold text-stone-900 mb-4 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      Key Clauses
-                    </h3>
-                    <div className="space-y-4">
-                      {analysis.key_clauses?.map((clause, i) => (
-                        <div key={i} className="p-4 rounded-xl border border-stone-100 bg-white">
-                          <h4 className="font-bold text-stone-900 text-sm mb-1">{clause.clause_name}</h4>
-                          <p className="text-stone-600 text-sm leading-snug">{clause.description}</p>
+                    <div className="grid gap-10 md:grid-cols-2">
+                      <div>
+                        <h3 className="font-anton text-xl uppercase mb-6 flex items-center gap-3">
+                          <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                          Strategic Clauses
+                        </h3>
+                        <div className="space-y-4">
+                          {analysis.key_clauses?.map((clause, i) => (
+                            <div key={i} className="p-6 bg-white border-4 border-charcoal brutal-shadow group hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[12px_12px_0px_0px_var(--charcoal)] transition-all">
+                              <h4 className="font-anton text-lg uppercase tracking-widest mb-2 text-charcoal">{clause.clause_name}</h4>
+                              <p className="font-satoshi text-sm text-charcoal/80 font-bold leading-relaxed">{clause.description}</p>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
 
-                  <div className="mt-10">
-                    <h3 className="font-serif text-lg font-semibold text-stone-900 mb-4 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                      Legal Risks
-                    </h3>
-                    <div className="space-y-4">
-                      {analysis.risks?.map((risk, i) => (
-                        <div key={i} className="p-4 rounded-xl border border-stone-100 bg-white">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-bold text-stone-900 text-sm">{risk.risk_name}</h4>
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${risk.severity === 'high' ? 'bg-red-50 text-red-600' :
-                              risk.severity === 'medium' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'
-                              }`}>
-                              {risk.severity} risk
+                      <div>
+                        <h3 className="font-anton text-xl uppercase mb-6 flex items-center gap-3">
+                          <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                          Risk Vectors
+                        </h3>
+                        <div className="space-y-4">
+                          {analysis.risks?.map((risk, i) => (
+                            <div key={i} className="p-6 bg-white border-4 border-charcoal brutal-shadow relative group hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[12px_12px_0px_0px_var(--charcoal)] transition-all overflow-hidden pr-8">
+                              <div className={`absolute right-0 top-0 bottom-0 w-2 border-l-4 border-charcoal ${risk.severity === 'high' ? 'bg-red-500' : risk.severity === 'medium' ? 'bg-amber-500' : 'bg-green-500'}`}></div>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-anton text-lg uppercase tracking-widest text-charcoal">{risk.risk_name}</h4>
+                                <span className={`text-[10px] bg-charcoal px-2 py-1 border-2 border-charcoal brutal-shadow-sm font-black uppercase tracking-[0.2em] ${risk.severity === 'high' ? 'text-red-500' : 'text-amber-500'}`}>
+                                  {risk.severity} Severity
+                                </span>
+                              </div>
+                              <p className="font-satoshi text-sm font-bold text-charcoal/80 leading-relaxed">{risk.explanation}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-10 md:grid-cols-2 border-t border-charcoal/5 pt-12">
+                      <div>
+                        <h3 className="font-anton text-xl uppercase mb-6 flex items-center gap-3">
+                          <span className="w-3 h-3 rounded-full bg-golden"></span>
+                          Missing Guardrails
+                        </h3>
+                        <div className="flex flex-wrap gap-3 mt-8">
+                          {analysis.missing_protections?.map((item: string, i: number) => (
+                            <span key={i} className="px-4 py-2 bg-sage text-charcoal text-[10px] font-black uppercase tracking-widest border-2 border-charcoal brutal-shadow-sm">
+                              {item}
                             </span>
-                          </div>
-                          <p className="text-stone-600 text-sm leading-snug">{risk.explanation}</p>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+
+                      <div>
+                        <h3 className="font-anton text-xl uppercase mb-6 flex items-center gap-3">
+                          <span className="w-3 h-3 rounded-full bg-charcoal"></span>
+                          Active Obligations
+                        </h3>
+                        <ul className="space-y-3">
+                          {analysis.obligations?.map((item: string, i: number) => (
+                            <li key={i} className="flex items-start gap-4 font-satoshi text-sm text-charcoal/70">
+                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-charcoal/20 flex-shrink-0"></span>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="mt-10">
-                    <h3 className="font-serif text-lg font-semibold text-stone-900 mb-4 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                      Missing Protections
-                    </h3>
-                    <ul className="space-y-2">
-                      {analysis.missing_protections?.map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-stone-600">
-                          <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-stone-300"></span>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="mt-10">
-                    <h3 className="font-serif text-lg font-semibold text-stone-900 mb-4 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-stone-900"></span>
-                      Obligations
-                    </h3>
-                    <ul className="space-y-2">
-                      {analysis.obligations?.map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-stone-600">
-                          <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-stone-300"></span>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 </div>
               </div>

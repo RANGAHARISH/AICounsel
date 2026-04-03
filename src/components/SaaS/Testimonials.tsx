@@ -3,21 +3,21 @@
 export default function Testimonials() {
     const testimonials = [
         {
-            name: "ALEX RIVERA",
-            role: "Ops Lead @ Hyper",
-            content: "FLUX didn't just speed up our workflow—it completely redefined how we think about output. The bento builder is a game changer.",
+            name: "THOMAS WRIGHT",
+            role: "Real Estate Attorney",
+            content: "AICounsel has fundamentally changed how I review tenant leases. What used to take two hours now takes ten minutes, with higher accuracy.",
             dark: false,
         },
         {
-            name: "SARAH CHEN",
-            role: "Founder @ Zenith",
-            content: "The most aggressive productivity tool I've ever used. We compressed a 4-month project into 6 weeks using the flux engine.",
+            name: "ELENA RODRIGUEZ",
+            role: "Founder @ Scaleup",
+            content: "Most aggressive legal tool I've used. We analyzed 50+ vendor contracts in a single afternoon. The risk flagging is scarily accurate.",
             dark: true,
         },
         {
-            name: "MARCUS VANE",
-            role: "CTO @ Nexus",
-            content: "Finally, a platform that respects the complexity of B2C operations while providing a brutalist-lite simplicity. Unmatched.",
+            name: "JULIAN BARNES",
+            role: "Compliance Officer",
+            content: "Finally, a platform that respects the complexity of international law while providing a brutalist-lite simplicity. Indispensable.",
             dark: false,
         }
     ];
@@ -26,15 +26,15 @@ export default function Testimonials() {
         <section className="py-24 px-6 bg-grid">
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-20">
-                    <span className="font-satoshi text-xs font-black uppercase tracking-[0.3em] text-charcoal/40 mb-4 block">Validation</span>
-                    <h2 className="font-anton text-6xl md:text-8xl uppercase">Built For <br /><span className="text-golden highlight-rotated inline-block px-1">Performers</span></h2>
+                    <span className="font-satoshi text-xs font-black uppercase tracking-[0.3em] text-charcoal bg-golden px-2 py-1 border-2 border-charcoal brutal-shadow-sm mb-4 inline-block">Validation</span>
+                    <h2 className="font-anton text-6xl md:text-8xl uppercase text-charcoal">Built For <br /><span className="text-charcoal highlight-rotated inline-block px-1">Performers</span></h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
                     {testimonials.map((t, i) => (
                         <div
                             key={i}
-                            className={`p-10 rounded-3xl flex flex-col gap-8 transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border border-charcoal/5 ${t.dark ? 'bg-charcoal text-white md:scale-110 md:z-10' : 'bg-white text-charcoal shadow-xl'
+                            className={`p-10 flex flex-col gap-8 transition-all duration-500 hover:-translate-y-2 border-4 border-charcoal brutal-shadow ${t.dark ? 'bg-charcoal text-white md:scale-110 md:z-10' : 'bg-white text-charcoal'
                                 }`}
                         >
                             {/* Stars */}
@@ -51,12 +51,12 @@ export default function Testimonials() {
 
                             {/* Footer */}
                             <div className="flex items-center gap-4 mt-auto">
-                                <div className="w-12 h-12 rounded-full bg-charcoal/10 grayscale border border-charcoal/10 flex items-center justify-center font-anton text-lg">
+                                <div className="w-12 h-12 bg-golden text-charcoal border-2 border-charcoal brutal-shadow-sm flex items-center justify-center font-anton text-lg">
                                     {t.name[0]}
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="font-anton text-sm uppercase tracking-wider">{t.name}</span>
-                                    <span className={`font-satoshi text-xs font-medium ${t.dark ? 'text-sage/40' : 'text-charcoal/40'}`}>{t.role}</span>
+                                    <span className={`font-satoshi text-xs font-black uppercase ${t.dark ? 'text-sage/40' : 'text-charcoal/60'}`}>{t.role}</span>
                                 </div>
                             </div>
                         </div>

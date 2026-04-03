@@ -4,75 +4,68 @@ export default function AbstractUI() {
     return (
         <div className="w-full h-full bg-white flex flex-col overflow-hidden font-satoshi">
             {/* Browser Header */}
-            <div className="h-12 border-b border-charcoal/10 flex items-center px-4 bg-charcoal/5">
+            <div className="h-12 border-b-4 border-charcoal flex items-center px-4 bg-sage/20">
                 <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-400/20 border border-red-400/40"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-400/20 border border-yellow-400/40"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-400/20 border border-green-400/40"></div>
+                    <div className="w-4 h-4 bg-charcoal border-2 border-charcoal"></div>
+                    <div className="w-4 h-4 bg-white border-2 border-charcoal"></div>
+                    <div className="w-4 h-4 bg-golden border-2 border-charcoal"></div>
                 </div>
                 <div className="flex-1 text-center">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-charcoal/40">flux_v2.0_canvas</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-charcoal bg-white border-2 border-charcoal px-4 py-1 brutal-shadow-sm">aicounsel_analyzer_v1.0</span>
                 </div>
             </div>
 
             {/* App Body */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Sidebar */}
-                <div className="w-16 md:w-48 border-r border-charcoal/10 bg-charcoal/5 p-4 flex flex-col gap-6">
-                    <div className="h-4 w-2/3 bg-charcoal/10 rounded"></div>
-                    <div className="flex flex-col gap-3">
-                        {[1, 2, 3, 4].map(i => (
+                <div className="w-16 md:w-48 border-r-4 border-charcoal bg-white p-4 flex flex-col gap-6">
+                    <div className="h-6 w-full bg-charcoal border-2 border-charcoal brutal-shadow-sm"></div>
+                    <div className="flex flex-col gap-4">
+                        {["Dashboard", "Analytics", "Archive", "Settings"].map((label, i) => (
                             <div key={i} className="flex items-center gap-3">
-                                <div className="w-4 h-4 bg-charcoal/10 rounded"></div>
-                                <div className="hidden md:block h-2 w-1/2 bg-charcoal/5 rounded"></div>
+                                <div className="w-6 h-6 bg-golden border-2 border-charcoal brutal-shadow-sm"></div>
+                                <div className="hidden md:block text-xs font-black uppercase tracking-widest text-charcoal">{label}</div>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 {/* Main Canvas */}
-                <div className="flex-1 bg-grid relative flex items-center justify-center p-8">
-                    <div className="w-full max-w-md bg-white rounded-lg shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] border border-charcoal/5 p-8 flex flex-col gap-4 animate-float">
-                        <div className="h-3 w-1/4 bg-golden/40 rounded"></div>
-                        <div className="h-8 w-full bg-charcoal/5 rounded font-anton flex items-center px-4 text-xs tracking-widest">
-                            DYNAMIC_HEADER_O1
+                <div className="flex-1 bg-grid relative flex items-center justify-center p-8 bg-charcoal">
+                    <div className="w-full max-w-md bg-white border-4 border-charcoal p-8 flex flex-col gap-4 animate-float brutal-shadow relative">
+                        <div className="absolute top-0 right-0 w-8 h-8 bg-golden border-b-4 border-l-4 border-charcoal brutal-shadow-sm"></div>
+                        <div className="h-4 w-1/3 bg-sage border-2 border-charcoal"></div>
+                        <div className="h-10 w-full bg-charcoal border-2 border-charcoal text-white font-anton flex items-center px-4 tracking-widest uppercase">
+                            Commercial_Lease_Agrmt
                         </div>
-                        <div className="space-y-2">
-                            <div className="h-2 w-full bg-charcoal/5 rounded"></div>
-                            <div className="h-2 w-full bg-charcoal/5 rounded"></div>
-                            <div className="h-2 w-2/3 bg-charcoal/5 rounded"></div>
+                        <div className="space-y-3 mt-4">
+                            <div className="h-3 w-full bg-charcoal/10"></div>
+                            <div className="h-3 w-full bg-charcoal/10"></div>
+                            <div className="h-3 w-2/3 bg-golden"></div>
                         </div>
-                        <div className="flex justify-between items-center mt-4">
+                        <div className="flex justify-between items-center mt-6">
                             <div className="flex -space-x-2">
                                 {[1, 2, 3].map(i => (
-                                    <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-charcoal/10 grayscale"></div>
+                                    <div key={i} className="w-10 h-10 border-4 border-charcoal bg-white flex items-center justify-center font-anton text-xs brutal-shadow-sm">{i}</div>
                                 ))}
                             </div>
-                            <div className="h-8 w-24 bg-golden rounded flex items-center justify-center text-[10px] font-black tracking-widest">
-                                SYNCED
+                            <div className="h-10 px-4 bg-golden border-2 border-charcoal flex items-center justify-center text-xs font-black tracking-widest uppercase brutal-shadow-sm">
+                                ANALYZED
                             </div>
                         </div>
                     </div>
 
-                    {/* Floating Cursor */}
-                    <div className="absolute top-1/4 left-3/4 flex flex-col gap-1 pointer-events-none translate-x-10 translate-y-10">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4.5 1.5L16.5 13.5L10 14.5L7.5 18.5L4.5 1.5Z" fill="#171e19" stroke="white" strokeWidth="2" />
-                        </svg>
-                        <div className="bg-charcoal text-white text-[10px] font-bold px-2 py-1 rounded-sm whitespace-nowrap">
-                            Sarah Flux
-                        </div>
-                    </div>
+
                 </div>
 
                 {/* Properties Panel */}
-                <div className="hidden lg:flex w-64 border-l border-charcoal/10 p-6 flex-col gap-8">
+                <div className="hidden lg:flex w-64 border-l-4 border-charcoal bg-white p-6 flex-col gap-8">
                     <div className="space-y-4">
                         <p className="font-anton text-[10px] uppercase tracking-widest text-charcoal/40">Typography</p>
-                        <div className="flex items-center justify-between border-b border-charcoal/5 pb-2">
-                            <span className="text-xs font-bold font-anton tracking-tight">ANTON DISPLAY</span>
-                            <div className="w-6 h-6 bg-charcoal/5 rounded flex items-center justify-center">
-                                <div className="w-2 h-2 border-t-2 border-r-2 border-charcoal/40 rotate-45 translate-y-0.5"></div>
+                        <div className="flex items-center justify-between border-b-4 border-charcoal pb-2">
+                            <span className="text-xs font-bold font-anton tracking-tight text-charcoal">ANTON DISPLAY</span>
+                            <div className="w-6 h-6 bg-golden border-2 border-charcoal flex items-center justify-center brutal-shadow-sm">
+                                <span className="font-black text-[10px]">+</span>
                             </div>
                         </div>
                     </div>
@@ -80,19 +73,19 @@ export default function AbstractUI() {
                     <div className="space-y-4">
                         <p className="font-anton text-[10px] uppercase tracking-widest text-charcoal/40">Appearance</p>
                         <div className="flex gap-2">
-                            <div className="w-8 h-8 rounded border border-charcoal/10 flex items-center justify-center bg-charcoal text-white text-[10px]">A</div>
-                            <div className="w-8 h-8 rounded border border-charcoal/10 flex items-center justify-center text-[10px]">A</div>
-                            <div className="w-8 h-8 rounded border border-charcoal/10 flex items-center justify-center text-[10px]">A</div>
+                            <div className="w-10 h-10 border-4 border-charcoal flex items-center justify-center bg-charcoal text-white font-anton text-xs brutal-shadow-sm">A</div>
+                            <div className="w-10 h-10 border-4 border-charcoal flex items-center justify-center bg-white text-charcoal font-anton text-xs brutal-shadow-sm">A</div>
+                            <div className="w-10 h-10 border-4 border-charcoal flex items-center justify-center bg-sage/20 text-charcoal font-anton text-xs brutal-shadow-sm">A</div>
                         </div>
                     </div>
 
                     <div className="space-y-4">
                         <p className="font-anton text-[10px] uppercase tracking-widest text-charcoal/40">Primary Accent</p>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-golden shadow-sm"></div>
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-golden border-4 border-charcoal brutal-shadow-sm"></div>
                             <div className="flex flex-col">
-                                <span className="text-xs font-black">#FFE17C</span>
-                                <span className="text-[10px] text-charcoal/40 uppercase">Golden Highlight</span>
+                                <span className="font-anton uppercase text-xs tracking-widest text-charcoal">#FFE17C</span>
+                                <span className="font-satoshi font-black text-[10px] text-charcoal uppercase mt-1">Golden Highlight</span>
                             </div>
                         </div>
                     </div>

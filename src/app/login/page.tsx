@@ -2,106 +2,49 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { Suspense } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") ?? "/analyze";
+
   const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
-    if (!isPending && session?.user) router.replace("/");
-  }, [session, isPending, router]);
+    if (!isPending && session?.user) router.replace(redirect);
+  }, [session, isPending, router, redirect]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
-  const [method] = useState<"password" | "otp">("password");
-  const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(0);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [timer]);
-
-  async function handleSendOTP() {
-    if (!email) {
-      setError("Please enter your email address.");
-      return;
-    }
-    setError("");
-    setLoading(true);
-    try {
-      const { error: err } = await authClient.emailOtp.sendVerificationOtp({
-        email,
-        type: "sign-in"
-      });
-      if (err) {
-        setError(err.message ?? "Failed to send OTP.");
-        return;
-      }
-      setOtpSent(true);
-      setTimer(60);
-    } catch {
-      setError("An unexpected error occurred.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      if (method === "password") {
-        const { data, error: err } = await authClient.signIn.email({
-          email,
-          password,
-        });
-        if (err) {
-          if (err.code === "INVALID_EMAIL_OR_PASSWORD") {
-            setError("Incorrect email or password.");
-          } else {
-            setError(err.message ?? "Sign in failed");
-          }
-          return;
+      const { data, error: err } = await authClient.signIn.email({ email, password });
+      if (err) {
+        if (err.code === "INVALID_EMAIL_OR_PASSWORD") {
+          setError("Incorrect email or password. Please try again.");
+        } else {
+          setError(err.message ?? "Login failed. Please try again.");
         }
-        if (data) {
-          router.push("/");
-          router.refresh();
-        }
-      } else {
-        // OTP Sign In
-        const { data, error: err } = await authClient.signIn.emailOtp({
-          email,
-          otp,
-        });
-        if (err) {
-          setError(err.message ?? "Failed to sign in with OTP.");
-          return;
-        }
-        if (data) {
-          router.push("/");
-          router.refresh();
-        }
+        return;
+      }
+      if (data) {
+        router.push(redirect);
+        router.refresh();
       }
     } catch (e) {
-      console.error("Login exception:", e);
       if (e instanceof TypeError && e.message.includes("fetch")) {
-        setError("Network error: Failed to connect to the server. Please check if the backend is running.");
+        setError("Network error. Please check your connection and try again.");
       } else {
-        setError(e instanceof Error ? e.message : "An unexpected error occurred.");
+        setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -110,34 +53,46 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <header className="border-b border-stone-200/80 bg-white/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="font-serif text-xl font-semibold text-stone-900">
-            AICounsel
+      {/* Header */}
+      <header className="border-b-4 border-charcoal bg-white sticky top-0 z-50">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <Link href="/" className="font-anton text-2xl uppercase tracking-tighter text-charcoal flex items-baseline">
+            AICOUNSEL<span className="text-golden">.</span>
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/signup" className="text-sm font-medium text-stone-600 transition hover:text-stone-900">
-              Sign up
+          <nav className="flex items-center gap-6">
+            <Link
+              href={`/signup${redirect !== "/analyze" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
+              className="font-satoshi text-xs font-black uppercase tracking-widest text-charcoal/50 hover:text-charcoal transition-colors"
+            >
+              Sign Up
             </Link>
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-md px-6 pt-16">
-        <h1 className="font-serif text-2xl font-semibold text-stone-900">Log in</h1>
-        <p className="mt-2 text-stone-600">Welcome back. Sign in to your account.</p>
+      <main className="mx-auto max-w-md px-6 pt-20 pb-16">
+        {/* Title */}
+        <div className="text-center mb-10">
+          <span className="font-satoshi text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/40 mb-3 block">
+            Welcome Back
+          </span>
+          <h1 className="font-anton text-5xl uppercase text-charcoal leading-none">Log In</h1>
+          <p className="mt-3 font-satoshi text-charcoal/60 text-sm">
+            Enter your email and password to continue.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6 bg-white border-2 border-charcoal/10 p-8 rounded-2xl shadow-xl">
           {error && (
-            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-              <div className="flex items-center justify-between">
-                <span>{error}</span>
-              </div>
+            <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-xs font-bold text-red-600 uppercase tracking-widest">
+              {error}
             </div>
           )}
 
+          {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-stone-700">
+            <label htmlFor="email" className="block font-satoshi text-[10px] font-black uppercase tracking-[0.2em] text-charcoal/50 mb-2">
               Email
             </label>
             <input
@@ -147,95 +102,65 @@ export default function LoginPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={otpSent && method === "otp"}
-              className="mt-2 block w-full rounded-lg border border-stone-300 px-4 py-2.5 text-stone-900 placeholder-stone-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] disabled:bg-stone-50"
+              className="w-full bg-charcoal/5 rounded-xl border-none px-4 py-3 font-satoshi text-sm focus:ring-2 focus:ring-golden outline-none transition-all"
               placeholder="you@example.com"
             />
           </div>
 
-          {method === "password" ? (
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-stone-700">
+          {/* Password */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="password" className="block font-satoshi text-[10px] font-black uppercase tracking-[0.2em] text-charcoal/50">
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 block w-full rounded-lg border border-stone-300 px-4 py-2.5 text-stone-900 placeholder-stone-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                placeholder="••••••••"
-              />
-              <div className="mt-1.5 flex justify-start">
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <Link
+                href="/forgot-password"
+                className="font-satoshi text-[10px] font-black uppercase tracking-widest text-charcoal/40 hover:text-charcoal transition-all"
+              >
+                Forgot Password?
+              </Link>
             </div>
-          ) : (
-            otpSent && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="otp" className="block text-sm font-medium text-stone-700">
-                    6-Digit Secure OTP {timer > 0 && <span className="text-emerald-600 font-mono">(Valid for {timer}s)</span>}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => { setOtpSent(false); setTimer(0); }}
-                    className="text-xs text-[var(--accent)] hover:underline"
-                  >
-                    Change email
-                  </button>
-                </div>
-                <input
-                  id="otp"
-                  type="text"
-                  required
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                  className="mt-2 block w-full rounded-lg border border-stone-300 px-4 py-2.5 text-stone-900 placeholder-stone-400 focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] font-mono text-center text-lg tracking-widest"
-                  placeholder="000000"
-                />
-                <p className="mt-2 text-xs text-stone-500">
-                  {timer > 0 ? "Please check your inbox for the 6-digit code." : "OTP has expired. Please request a new one."}
-                </p>
-              </div>
-            )
-          )}
+            <input
+              id="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-charcoal/5 rounded-xl border-none px-4 py-3 font-satoshi text-sm focus:ring-2 focus:ring-golden outline-none transition-all"
+              placeholder="••••••••"
+            />
+          </div>
 
-          {method === "otp" && !otpSent ? (
-            <button
-              type="button"
-              onClick={handleSendOTP}
-              disabled={loading || !email}
-              className="w-full rounded-lg bg-stone-900 px-4 py-3 font-medium text-white transition hover:bg-stone-800 disabled:opacity-50"
-            >
-              {loading ? "Sending Code…" : "Send Verification Code"}
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-stone-900 px-4 py-3 font-medium text-white transition hover:bg-stone-800 disabled:opacity-50"
-            >
-              {loading ? "Verifying…" : "Sign in"}
-            </button>
-          )}
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-golden text-charcoal font-anton text-2xl px-10 py-4 rounded-2xl hover:scale-[1.02] hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50 shadow-xl mt-2"
+          >
+            {loading ? "LOGGING IN…" : "LOGIN"}
+          </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-stone-600">
+        {/* Switch to Sign Up */}
+        <p className="mt-8 text-center font-satoshi text-sm text-charcoal/50">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-medium text-[var(--accent)] hover:underline">
-            Sign up
+          <Link
+            href={`/signup${redirect !== "/analyze" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
+            className="font-black text-charcoal hover:text-golden transition-colors uppercase tracking-widest text-xs"
+          >
+            Sign Up
           </Link>
         </p>
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

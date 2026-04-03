@@ -287,47 +287,33 @@ export async function POST(request: Request) {
       );
     }
 
-    const prompt = buildPrompt(text.slice(0, 100_000), country);
+    const { AnalysisService } = await import("@/lib/llm/analysis-service");
+    const analysisService = new AnalysisService(apiKey);
 
-    console.log("Sending request to Groq API (Deterministic Mode)...");
-    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0,
-        top_p: 1,
-        response_format: { type: "json_object" }
-      })
+    console.log("Processing document via AnalysisService Map-Reduce pipeline...");
+
+    const goal = `Analyze the provided legal document for the jurisdiction of ${country}. 
+    Focus on strategic key clauses, concrete obligations, severe risk vectors, and missing protections. 
+    Produce a summary that captures the operational intelligence of the document.`;
+
+    const structure = JSON.stringify({
+      document_type: "string",
+      country: "string",
+      key_clauses: [{ clause_name: "string", description: "string" }],
+      obligations: ["string"],
+      risks: [{ risk_name: "string", severity: "low|medium|high", explanation: "string" }],
+      missing_protections: ["string"],
+      summary: "string"
     });
 
-    if (!groqResponse.ok) {
-      const errorText = await groqResponse.text();
-      console.error("Groq API returned an error:", groqResponse.status, errorText);
-      throw new Error(`Groq API Error: ${groqResponse.status} ${errorText}`);
-    }
+    const finalResult = await analysisService.analyzeDocumentJSON(text, goal, structure, {
+      model: "llama-3.3-70b-versatile",
+      temperature: 0,
+      systemPrompt: "You are a professional legal analyst specializing in jurisdiction-aware document intelligence. Return only valid JSON."
+    });
 
-    const chatCompletion = await groqResponse.json();
-    const content = chatCompletion.choices?.[0]?.message?.content?.trim() || "";
-    console.log("Groq API response received successfully.");
-
-    if (!content) {
-      throw new Error("The AI returned an empty response.");
-    }
-
-    // Parse and cache
-    let finalResult: AnalysisResult;
-    try {
-      finalResult = JSON.parse(content);
-      analysisCache.set(cacheKey, finalResult);
-    } catch (parseErr) {
-      console.error("Failed to parse AI JSON response:", content);
-      throw new Error("AI returned invalid JSON formatting. Please try again.");
-    }
+    console.log("Analysis completed successfully.");
+    analysisCache.set(cacheKey, finalResult);
 
     return NextResponse.json(finalResult);
   } catch (e) {
@@ -342,6 +328,7 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+
 }
 
 
