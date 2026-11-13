@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
 /* ─────────────── System Prompt ─────────────── */
 const SYSTEM_PROMPT = `You are AICounsel's friendly, expert AI assistant embedded on the AICounsel website. Your job is to guide visitors, answer their legal questions, and help them navigate the platform.
 
@@ -54,6 +52,15 @@ Step 7: Save the report to your dashboard for future reference.
 /* ─────────────── Route Handler ─────────────── */
 export async function POST(req: NextRequest) {
     try {
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+            return NextResponse.json(
+                { error: "AI chat is not configured on this deployment." },
+                { status: 503 }
+            );
+        }
+
+        const groq = new Groq({ apiKey });
         const { messages } = await req.json();
 
         if (!messages || !Array.isArray(messages)) {

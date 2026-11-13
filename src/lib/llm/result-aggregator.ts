@@ -1,5 +1,5 @@
 import { TokenManager } from "./token-manager";
-import { LLMExecutor, LLMRequest } from "./llm-executor";
+import { LLMExecutor } from "./llm-executor";
 
 /**
  * ResultAggregator synthesizes multiple chunk responses into a final output.
@@ -67,7 +67,7 @@ export class ResultAggregator {
     /**
      * Aggregates JSON structures by merging fields logically.
      */
-    async reduceJSON(chunkResults: string[], structure: string, model: string = "llama3-70b-8192"): Promise<any> {
+    async reduceJSON<T = unknown>(chunkResults: string[], structure: string, model: string = "llama3-70b-8192"): Promise<T> {
         const prompt = `
             TASK: Merge the following JSON assessment components into a single valid JSON object.
             TARGET STRUCTURE: ${structure}
@@ -91,8 +91,8 @@ export class ResultAggregator {
         try {
             // Remove markdown code blocks if present
             const clean = raw.replace(/```json\n?|\n?```/g, "").trim();
-            return JSON.parse(clean);
-        } catch (e) {
+            return JSON.parse(clean) as T;
+        } catch {
             console.error("JSON Reduction Failed. Raw output:", raw);
             throw new Error("Aggregator failed to produce valid JSON");
         }

@@ -1,4 +1,5 @@
 import { Groq } from "groq-sdk";
+import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/completions";
 
 export interface LLMRequest {
     systemPrompt?: string;
@@ -26,7 +27,7 @@ export class LLMExecutor {
      * Executes a single prompt with retry logic.
      */
     async execute(req: LLMRequest, retryCount = 0): Promise<string> {
-        const messages: any[] = [];
+        const messages: ChatCompletionMessageParam[] = [];
         if (req.systemPrompt) {
             messages.push({ role: "system", content: req.systemPrompt });
         }
@@ -41,15 +42,19 @@ export class LLMExecutor {
             });
 
             return response.choices[0]?.message?.content || "";
-        } catch (error: any) {
-            const errorMessage = error.message || "";
-            const isRateLimit = error.status === 429 ||
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const status =
+                typeof error === "object" && error !== null && "status" in error
+                    ? error.status
+                    : undefined;
+            const isRateLimit = status === 429 ||
                 errorMessage.includes("rate_limit_exceeded") ||
                 errorMessage.includes("TPM") ||
                 errorMessage.includes("Request too large");
 
             // Handle Rate Limit or Overloaded
-            if ((isRateLimit || error.status === 503) && retryCount < LLMExecutor.MAX_RETRIES) {
+            if ((isRateLimit || status === 503) && retryCount < LLMExecutor.MAX_RETRIES) {
                 // For TPM/Rate limits, we use a more aggressive backoff
                 const wait = Math.pow(3, retryCount) * 2000;
                 console.warn(`LLM Rate Limited/TPM Exceeded. Retrying in ${wait}ms...`);
@@ -94,7 +99,7 @@ export class LLMExecutor {
      * Provides a generator for streaming responses (for final output UX).
      */
     async *streamExecute(req: LLMRequest) {
-        const messages: any[] = [];
+        const messages: ChatCompletionMessageParam[] = [];
         if (req.systemPrompt) {
             messages.push({ role: "system", content: req.systemPrompt });
         }

@@ -63,7 +63,7 @@ export class AnalysisService {
     /**
      * Analyzes a document and returns structured JSON.
      */
-    async analyzeDocumentJSON(text: string, goal: string, structure: string, options: AnalysisOptions = {}): Promise<any> {
+    async analyzeDocumentJSON<T = unknown>(text: string, goal: string, structure: string, options: AnalysisOptions = {}): Promise<T> {
         const model = options.model || "llama3-70b-8192";
         const tokens = TokenManager.countTokens(text);
         const limit = TokenManager.getMaxChunkTokens(model);
@@ -75,7 +75,7 @@ export class AnalysisService {
                 model,
                 temperature: options.temperature
             });
-            return JSON.parse(raw.replace(/```json\n?|\n?```/g, "").trim());
+            return JSON.parse(raw.replace(/```json\n?|\n?```/g, "").trim()) as T;
         }
 
         // Map-Reduce for JSON
@@ -87,6 +87,6 @@ export class AnalysisService {
             temperature: options.temperature
         });
 
-        return this.aggregator.reduceJSON(chunkResults, structure, model);
+        return this.aggregator.reduceJSON<T>(chunkResults, structure, model);
     }
 }

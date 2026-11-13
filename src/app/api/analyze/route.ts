@@ -306,7 +306,7 @@ export async function POST(request: Request) {
       summary: "string"
     });
 
-    const finalResult = await analysisService.analyzeDocumentJSON(text, goal, structure, {
+    const finalResult = await analysisService.analyzeDocumentJSON<AnalysisResult>(text, goal, structure, {
       model: "llama-3.3-70b-versatile",
       temperature: 0,
       systemPrompt: "You are a professional legal analyst specializing in jurisdiction-aware document intelligence. Return only valid JSON."
