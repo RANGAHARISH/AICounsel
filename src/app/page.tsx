@@ -17,7 +17,9 @@ export default function Home() {
           Interested in buying the AICounsel website? Contact me for details.
         </p>
         <a
-          href="mailto:rajuanna112233@gmail.com?subject=AICounsel%20website%20for%20sale"
+          href="https://mail.google.com/mail/?view=cm&fs=1&to=rajuanna112233%40gmail.com&su=AICounsel%20website%20for%20sale"
+          target="_blank"
+          rel="noopener noreferrer"
           className="mt-8 inline-flex min-h-12 max-w-full items-center border-2 border-charcoal bg-[#ffe17c] px-5 py-3 font-satoshi text-sm font-black transition hover:bg-charcoal hover:text-[#ffe17c]"
         >
           <span className="break-all">rajuanna112233@gmail.com</span>
